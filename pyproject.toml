@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "pushka-bot"
+version = "0.1.0"
+description = ""
+authors = ["Link13-tech <151656048+Link13-tech@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
