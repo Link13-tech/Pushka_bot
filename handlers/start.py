@@ -1,14 +1,54 @@
 from aiogram import Router
-from aiogram.filters import CommandStart
-from aiogram.types import Message
-from aiogram.utils.markdown import hbold
+from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.filters import Command
+from aiogram import types
+from database import user_db
+from database.database import get_async_session
 
 router = Router()
 
 
-@router.message(CommandStart())
-async def command_start_handler(message: Message) -> None:
+@router.message(Command("start"))
+async def start_handler(message: Message):
     """
-    Хендлер для команды /start
+    Хендлер для команды /start. Показывает приветственное сообщение и одну кнопку.
+    Создает пользователя, если его нет в базе данных.
     """
-    await message.answer(f"Привет, {hbold(message.from_user.full_name)}! Я помогу тебе изучать стихи А.С. Пушкина.")
+    # Получаем данные пользователя
+    telegram_id = message.from_user.id
+    username = message.from_user.username
+
+    # Получаем или создаем пользователя в базе данных
+    async with get_async_session() as session:
+        user = await user_db.get_or_create_user(session, telegram_id, username)
+
+    # Кнопка для выбора стихотворения
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[[
+            InlineKeyboardButton(text="Выбрать стихотворение", callback_data="select_poem")
+        ]]
+    )
+
+    # Отправляем приветственное сообщение
+    await message.answer(
+        f"Привет, {username}! Добро пожаловать в бот для изучения стихотворений.",
+        reply_markup=keyboard,
+    )
+
+
+@router.callback_query(lambda c: c.data == "select_poem")
+async def select_poem_handler(callback: types.CallbackQuery):
+    """
+    Хендлер для кнопки "Выбрать стихотворение".
+    Показывает сообщение с выбором и две кнопки.
+    """
+    keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Искать по алфавиту", callback_data="search_alphabet")],
+            [InlineKeyboardButton(text="Случайное стихотворение", callback_data="random_poem")]
+        ]
+    )
+    await callback.message.edit_text(
+        "Давай приступим! Можем найти стихотворение по алфавиту или я предложу тебе случайный стих.",
+        reply_markup=keyboard,
+    )

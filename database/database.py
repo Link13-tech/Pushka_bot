@@ -37,8 +37,6 @@ def create_sessionmaker(
     )
 
 
-# Создаем движок
 engine = create_async_engine(DATABASE_URL, future=True, echo=True)
 
-# Создаем асинхронную фабрику сессий
 async_session = create_sessionmaker(engine)
