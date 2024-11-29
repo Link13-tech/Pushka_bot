@@ -1,16 +1,19 @@
 import asyncio
 import logging
 import sys
+
 from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import BotCommand
 from aiogram.enums import ParseMode
+from aiogram import types, F
 from dotenv import load_dotenv
 from handlers.start import router as start_router
 from handlers.poems import router as poems_router
 from handlers.share import router as share_router
+from handlers.voice import router as voice_router
 import os
 
 # Загружаем переменные окружения
@@ -31,19 +34,53 @@ dp = Dispatcher(storage=MemoryStorage())
 dp.include_router(start_router)
 dp.include_router(poems_router)
 dp.include_router(share_router)
+dp.include_router(voice_router)
 
 
 async def set_bot_commands() -> None:
     """
-    Устанавливаем команды для бота
+    Устанавливаем команды для меню бота.
     """
     commands = [
         BotCommand(command="start", description="Начать работу с ботом"),
+        BotCommand(command="description", description="Описание бота"),
+        BotCommand(command="contact", description="Контакты для связи"),
     ]
     await bot.set_my_commands(commands)
 
 
+@dp.message(F.text.lower() == "/description")
+async def description_command(message: types.Message):
+    """
+    Описание бота.
+    """
+    await message.answer(
+        "Это бот для работы со стихами. Здесь вы можете тренировать память, записывать голос и делиться своими успехами."
+    )
+
+
+@dp.message(F.text.lower() == "/contact")
+async def contact_command(message: types.Message):
+    """
+    Контакты для связи.
+    """
+    await message.answer(
+        "Если у вас возникли вопросы, вы можете связаться с нами:\n"
+        "📧 E-mail: \n"
+        "📞 Телефон:"
+    )
+
+# @dp.message(
+#     ~F.text.in_(answers), ~F.text.lower().startswith("/feedback"),
+#     ~F.text.lower().startswith("/start"), ~F.text.lower().startswith("/contact"),
+#     ~F.text.lower().startswith("/description"), ~F.text.lower().startswith("/victory")
+# )
+# async def handle_invalid_message(message: types.Message):
+#     await message.answer("Простите, я не понимаю вашего сообщения. Пожалуйста, используйте доступные команды.")
+
+
 async def main() -> None:
+    await set_bot_commands()
     await dp.start_polling(bot)
 
 

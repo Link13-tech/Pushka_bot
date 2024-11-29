@@ -12,6 +12,11 @@ asyncpg = "^0.30.0"
 sqlalchemy = "^2.0.36"
 python-dotenv = "^1.0.1"
 alembic = "^1.14.0"
+pydub = "^0.25.1"
+noisereduce = "^3.0.3"
+librosa = "^0.10.2.post1"
+speechrecognition = "^3.11.0"
+soundfile = "^0.12.1"
 
 
 

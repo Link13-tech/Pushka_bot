@@ -20,7 +20,7 @@ async def start_handler(message: Message):
 
     # Получаем или создаем пользователя в базе данных
     async with get_async_session() as session:
-        user = await user_db.get_or_create_user(session, telegram_id, username)
+        await user_db.get_or_create_user(session, telegram_id, username)
 
     # Кнопка для выбора стихотворения
     keyboard = InlineKeyboardMarkup(
@@ -31,7 +31,9 @@ async def start_handler(message: Message):
 
     # Отправляем приветственное сообщение
     await message.answer(
-        f"Привет, {username}! Добро пожаловать в бот для изучения стихотворений.",
+        f"Привет, {username}! Добро пожаловать в бот для изучения стихотворений."
+        f"Перед погружением в литературу золотого века не забудь познакомиться с инструкцией,"
+        f"которая поможет тебе в изучении стихов, все полезные команды найдешь в меню ☺",
         reply_markup=keyboard,
     )
 
@@ -42,6 +44,7 @@ async def select_poem_handler(callback: types.CallbackQuery):
     Хендлер для кнопки "Выбрать стихотворение".
     Показывает сообщение с выбором и две кнопки.
     """
+
     keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="Искать по алфавиту", callback_data="search_alphabet")],

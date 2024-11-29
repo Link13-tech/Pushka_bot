@@ -1,9 +1,13 @@
 from aiogram import Router
+from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+
+from database import user_db
 from database.database import get_async_session
 from sqlalchemy import text
 from levels.training_levels import apply_difficulty_level
 from database.user_db import upsert_user_poem_result, update_current_poem_id, update_current_level
+
 
 router = Router()
 
@@ -16,14 +20,39 @@ def extract_poem_id(callback_data: str) -> int:
 # Хендлер для поиска стихов по алфавиту
 @router.callback_query(lambda c: c.data == "search_alphabet")
 async def search_alphabet_handler(callback: CallbackQuery):
+    await callback.message.edit_reply_markup(reply_markup=None)
+    telegram_user_id = callback.from_user.id
+    # Получаем пользователя из базы данных
     async with get_async_session() as session:
-        query = text("SELECT id, title FROM poems ORDER BY title ASC")
-        poems = await session.execute(query)
-        poems_list = poems.fetchall()
+        user = await user_db.get_or_create_user(session, telegram_user_id, callback.from_user.username)
 
+        # Теперь используем user.id, который является правильным user_id в базе данных
+        user_id = user.id
+        # Запрос для получения стихов с правильным user_id
+        query = text("""
+            SELECT p.id, p.title,
+                   COALESCE(up.status, 'not_started') AS status
+            FROM poems p
+            LEFT JOIN user_poems up
+            ON p.id = up.poem_id AND up.user_id = :user_id
+            ORDER BY p.title ASC
+        """)
+        result = await session.execute(query, {"user_id": user_id})
+        poems_list = result.fetchall()
+
+        # Проверяем, есть ли стихи в списке
         if poems_list:
+            # Формируем клавиатуру с галочками на основе статусов
             keyboard = InlineKeyboardMarkup(
-                inline_keyboard=[[InlineKeyboardButton(text=poem[1], callback_data=f"poem_{poem[0]}")] for poem in poems_list]
+                inline_keyboard=[
+                    [
+                        InlineKeyboardButton(
+                            text=f"{poem[1]} ✅" if poem[2] == "finished" else poem[1],
+                            callback_data=f"poem_{poem[0]}"
+                        )
+                    ]
+                    for poem in poems_list
+                ]
             )
             await callback.message.answer("Выберите стихотворение:", reply_markup=keyboard)
         else:
@@ -32,7 +61,8 @@ async def search_alphabet_handler(callback: CallbackQuery):
 
 # Хендлер для выбранного стихотворения из списка по алфавиту
 @router.callback_query(lambda c: c.data.startswith("poem_"))
-async def poem_selected_handler(callback: CallbackQuery):
+async def poem_selected_handler(callback: CallbackQuery, state: FSMContext):
+    await callback.message.delete()
     poem_id = extract_poem_id(callback.data)
 
     async with get_async_session() as session:
@@ -43,20 +73,22 @@ async def poem_selected_handler(callback: CallbackQuery):
         if result:
             title = result[0]
             keyboard = InlineKeyboardMarkup(
-                inline_keyboard=[
-                    [InlineKeyboardButton(text=f'''Учить "{title}"''', callback_data=f"train_{poem_id}_0")]
-                ]
+                inline_keyboard=[[
+                    InlineKeyboardButton(text=f'''Учить "{title}"''', callback_data=f"train_{poem_id}_0")
+                ]]
             )
+            # Сохраняем poem_id в состояние FSM
+            await state.update_data(poem_id=poem_id, title=title)
+
             # Отправляем сообщение с кнопкой для начала изучения
-            await callback.message.answer(f"Отличный выбор! Теперь давай начнем изучение стихотворения <b>{title}</b>.", reply_markup=keyboard)
+            await callback.message.answer(f'''Отличный выбор! Теперь давай начнем изучение стихотворения <b>"{title}"</b>.''', reply_markup=keyboard)
         else:
             await callback.message.answer("Такое стихотворение не найдено.")
 
 
-# Хендлер для случайного стихотворения
 @router.callback_query(lambda c: c.data == "random_poem")
-async def random_poem_handler(callback: CallbackQuery):
-
+async def random_poem_handler(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_reply_markup(reply_markup=None)
     async with get_async_session() as session:
         query = text("SELECT title, id FROM poems ORDER BY RANDOM() LIMIT 1")
         poem = await session.execute(query)
@@ -64,20 +96,24 @@ async def random_poem_handler(callback: CallbackQuery):
 
         if result:
             title, poem_id = result
+            await state.update_data(poem_id=poem_id, title=title)
+
             keyboard = InlineKeyboardMarkup(
                 inline_keyboard=[
                     [InlineKeyboardButton(text=f'''Учить "{title}"''', callback_data=f"train_{poem_id}_0")],
-                    [InlineKeyboardButton(text="Не буду учить, хочу поделиться с друзьями", callback_data="share")]
+                    [InlineKeyboardButton(text="Уже выучил, хочу поделиться с друзьями", callback_data="share")],
+                    [InlineKeyboardButton(text="Выбрать другое стихотворение", callback_data="select_poem")]
                 ]
             )
             # Отправляем сообщение о выбранном стихотворении
-            await callback.message.answer(f"Я подобрал для тебя стихотворение <b>{title}</b>.\nНачнем изучение!", reply_markup=keyboard)
+            await callback.message.answer(f'''Я подобрал для тебя стихотворение <b>"{title}"</b>.\nНачнем изучение!''', reply_markup=keyboard)
         else:
             await callback.message.answer("В базе данных пока нет стихотворений.")
 
 
 # Общий обработчик для уровней тренировки
-async def handle_training_level(callback: CallbackQuery, level: int):
+async def handle_training_level(callback: CallbackQuery, level: int, state: FSMContext):
+    await callback.message.delete()
     poem_id = extract_poem_id(callback.data)
     user_id = callback.from_user.id
     async with get_async_session() as session:
@@ -100,6 +136,9 @@ async def handle_training_level(callback: CallbackQuery, level: int):
             if level > 0:
                 await update_current_level(session, user_id, level)
 
+            # Обновляем данные в стейте
+            await state.update_data(poem_id=poem_id, current_level=level)
+
             buttons = []
             if level < 4:
                 buttons.append([InlineKeyboardButton(text="Записать голос", callback_data=f"record_{poem_id}_{next_level}")])
@@ -118,32 +157,40 @@ async def handle_training_level(callback: CallbackQuery, level: int):
 
 # Универсальный хендлер для всех уровней тренировки
 @router.callback_query(lambda c: c.data.startswith("train_"))
-async def training_handler(callback: CallbackQuery):
+async def training_handler(callback: CallbackQuery, state: FSMContext):
     level = int(callback.data.split("_")[2])
-    await handle_training_level(callback, level)
+    await handle_training_level(callback, level, state)
 
 
-# Хендлер для завершения обучения
-@router.callback_query(lambda c: c.data.startswith("finished_"))
-async def finished_handler(callback: CallbackQuery):
-    poem_id = extract_poem_id(callback.data)
+@router.callback_query(lambda query: query.data.startswith("finished_"))
+async def finished_handler(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
 
+    # Получаем данные из состояния
+    data = await state.get_data()
+
+    # Получаем `poem_id` и `poem_title` из состояния
+    poem_id = data.get('poem_id')
+    title = data.get("title")
+
     async with get_async_session() as session:
-        query = text("SELECT title FROM poems WHERE id = :id")
-        poem = await session.execute(query, {"id": poem_id})
-        result = poem.fetchone()
+        # Обновляем статус стихотворения на 'finished'
+        await upsert_user_poem_result(session, user_id, poem_id, status='finished')
+        await update_current_poem_id(session, user_id, None)
+        await update_current_level(session, user_id, 0)
 
-        if result:
-            title = result[0]
-            # Сообщаем о завершении
-            await callback.message.answer(f"Поздравляю! Вы выучили стихотворение: {title}")
+    # Сообщение и кнопки для "Поделиться" и "Выбрать другое стихотворение"
+    share_message = f"Поздравляю! Стих выучен: {title}. Поделись успехом с друзьями!"
 
-            # Завершаем обучение для пользователя через User-DB
-            await upsert_user_poem_result(session, user_id, poem_id, status='finished')
+    share_keyboard = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Поделиться", callback_data="share_poem")],
+            [InlineKeyboardButton(text="Выбрать другое стихотворение", callback_data="select_poem")]
+        ]
+    )
 
-            # Обнуляем текущий уровень и текущий стих
-            await update_current_poem_id(session, user_id, None)
-            await update_current_level(session, user_id, 0)
-        else:
-            await callback.message.answer("Такое стихотворение не найдено.")
+    # Отправка сообщения с двумя кнопками
+    await callback.message.answer(
+        text=share_message,
+        reply_markup=share_keyboard
+    )
