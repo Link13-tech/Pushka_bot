@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 from handlers.start import router as start_router
 from handlers.poems import router as poems_router
 from handlers.share import router as share_router
+from handlers.voice import router as voice_router
 import os
 
 # Загружаем переменные окружения
@@ -31,6 +32,7 @@ dp = Dispatcher(storage=MemoryStorage())
 dp.include_router(start_router)
 dp.include_router(poems_router)
 dp.include_router(share_router)
+dp.include_router(voice_router)
 
 
 async def set_bot_commands() -> None:
