@@ -49,7 +49,6 @@ async def handle_unrecognized_message(message: types.Message):
     )
 
 
-
 @router.callback_query(lambda c: c.data == "select_poem")
 async def select_poem_handler(callback: types.CallbackQuery):
     """
