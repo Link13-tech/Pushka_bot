@@ -16,7 +16,6 @@ async def finished_or_share_handler(callback: CallbackQuery, state: FSMContext):
     if callback.data.startswith("share_poem"):
         data = await state.get_data()
         title = data.get("title")
-        print(user_id)
 
         # Сообщение и кнопки для "Поделиться"
         share_message = (
@@ -49,7 +48,6 @@ async def finished_or_share_handler(callback: CallbackQuery, state: FSMContext):
             poem_status = await get_user_poem_status(session, user_id, poem_id)
 
             if poem_status == "finished":
-                # Получаем название стиха
                 query = text("SELECT title FROM poems WHERE id = :id")
                 poem = await session.execute(query, {"id": poem_id})
                 result = poem.fetchone()

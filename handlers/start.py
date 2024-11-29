@@ -38,6 +38,18 @@ async def start_handler(message: Message):
     )
 
 
+@router.message(lambda message: message.content_type != types.ContentType.VOICE)
+async def handle_unrecognized_message(message: types.Message):
+    """
+    Обработчик для всех сообщений, которые не являются голосовыми сообщениями.
+    Пропускает голосовые сообщения, чтобы они не блокировались этим обработчиком.
+    """
+    await message.answer(
+        "Пожалуйста, используйте доступные команды или кнопки.",
+    )
+
+
+
 @router.callback_query(lambda c: c.data == "select_poem")
 async def select_poem_handler(callback: types.CallbackQuery):
     """

@@ -70,14 +70,6 @@ async def contact_command(message: types.Message):
         "📞 Телефон:"
     )
 
-# @dp.message(
-#     ~F.text.in_(answers), ~F.text.lower().startswith("/feedback"),
-#     ~F.text.lower().startswith("/start"), ~F.text.lower().startswith("/contact"),
-#     ~F.text.lower().startswith("/description"), ~F.text.lower().startswith("/victory")
-# )
-# async def handle_invalid_message(message: types.Message):
-#     await message.answer("Простите, я не понимаю вашего сообщения. Пожалуйста, используйте доступные команды.")
-
 
 async def main() -> None:
     await set_bot_commands()
