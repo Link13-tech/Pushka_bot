@@ -20,6 +20,7 @@ def extract_poem_id(callback_data: str) -> int:
 # Хендлер для поиска стихов по алфавиту
 @router.callback_query(lambda c: c.data == "search_alphabet")
 async def search_alphabet_handler(callback: CallbackQuery):
+    await callback.message.edit_reply_markup(reply_markup=None)
     telegram_user_id = callback.from_user.id
     # Получаем пользователя из базы данных
     async with get_async_session() as session:
@@ -87,6 +88,7 @@ async def poem_selected_handler(callback: CallbackQuery, state: FSMContext):
 
 @router.callback_query(lambda c: c.data == "random_poem")
 async def random_poem_handler(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_reply_markup(reply_markup=None)
     async with get_async_session() as session:
         query = text("SELECT title, id FROM poems ORDER BY RANDOM() LIMIT 1")
         poem = await session.execute(query)

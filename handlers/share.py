@@ -11,6 +11,7 @@ router = Router()
 
 @router.callback_query(lambda query: query.data.startswith("share_poem") or query.data == "share")
 async def finished_or_share_handler(callback: CallbackQuery, state: FSMContext):
+    await callback.message.delete()
     user_id = callback.from_user.id
     if callback.data.startswith("share_poem"):
         data = await state.get_data()
@@ -29,7 +30,7 @@ async def finished_or_share_handler(callback: CallbackQuery, state: FSMContext):
             inline_keyboard=[
                 [InlineKeyboardButton(text="Поделиться через VK", url=vk_share_link)],
                 [InlineKeyboardButton(text="Поделиться через Одноклассники", url=ok_share_link)],
-                [InlineKeyboardButton(text="Я уже поделился? жми сюда", callback_data="share_done")]
+                [InlineKeyboardButton(text="Я уже поделился? Жми сюда", callback_data="share_done")]
             ]
         )
 
@@ -69,7 +70,7 @@ async def finished_or_share_handler(callback: CallbackQuery, state: FSMContext):
                     inline_keyboard=[
                         [InlineKeyboardButton(text="Поделиться через VK", url=vk_share_link)],
                         [InlineKeyboardButton(text="Поделиться через Одноклассники", url=ok_share_link)],
-                        [InlineKeyboardButton(text="Я уже поделился? жми сюда", callback_data="share_done")]
+                        [InlineKeyboardButton(text="Я уже поделился? Жми сюда", callback_data="share_done")]
                     ]
                 )
 

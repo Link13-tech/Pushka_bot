@@ -1,7 +1,7 @@
 import os
 
 from aiogram import Router, types
-from aiogram.types import CallbackQuery, ContentType
+from aiogram.types import CallbackQuery, ContentType, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 
@@ -27,16 +27,7 @@ async def start_recording(callback: CallbackQuery, state: FSMContext):
     poem_id = int(callback.data.split("_")[1])
     await state.update_data(poem_id=poem_id)
     await state.set_state(RecordVoiceState.waiting_for_voice)
-    await callback.message.answer("🎤 Запишите голосовое сообщение с текстом стихотворения.")
-
-
-# Обработчик кнопки "Записать голос"
-@router.callback_query(lambda c: c.data.startswith("record_"))
-async def start_recording(callback: CallbackQuery, state: FSMContext):
-    poem_id = int(callback.data.split("_")[1])
-    await state.update_data(poem_id=poem_id)
-    await state.set_state(RecordVoiceState.waiting_for_voice)
-    await callback.message.answer("🎤 Запишите голосовое сообщение с текстом стихотворения.")
+    await callback.message.answer("🎤 Запишите голосовое сообщение с текстом стихотворения.  Не забывай читать стих громко и с чувством!!☺☺")
 
 
 # Обработчик голосового сообщения
@@ -50,6 +41,7 @@ async def process_voice_message(message: types.Message, state: FSMContext):
     # Извлекаем данные из состояния
     state_data = await state.get_data()
     poem_id = state_data["poem_id"]
+    level = state_data["current_level"]
 
     # Скачиваем голосовое сообщение
     voice_file = await message.bot.get_file(message.voice.file_id)
@@ -93,5 +85,15 @@ async def process_voice_message(message: types.Message, state: FSMContext):
             if os.path.exists(path):
                 os.remove(path)
 
-    # Очищаем состояние FSM
-    await state.clear()
+    # Добавляем кнопку для перехода на следующий уровень
+    next_level = level + 1
+    buttons = [
+        [InlineKeyboardButton(text="Перейти на следующий уровень", callback_data=f"train_{poem_id}_{next_level}")]
+    ]
+    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+
+    # Отправляем кнопку с переходом на следующий уровень
+    await message.answer(
+        "Перейди на следующий уровень, нажми кнопку ниже 👇",
+        reply_markup=keyboard
+    )
