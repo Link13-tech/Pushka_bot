@@ -42,6 +42,7 @@ async def process_voice_message(message: types.Message, state: FSMContext):
     state_data = await state.get_data()
     poem_id = state_data["poem_id"]
     level = state_data["current_level"]
+    poem_message_id = state_data.get("poem_message_id")
 
     # Скачиваем голосовое сообщение
     voice_file = await message.bot.get_file(message.voice.file_id)
@@ -69,11 +70,21 @@ async def process_voice_message(message: types.Message, state: FSMContext):
         # Сравнение текста
         similarity = calculate_similarity(recognized_text, cleaned_original_text)
 
-        # Ответ пользователю
+        await message.bot.delete_message(message.chat.id, poem_message_id)
+
+        # Добавляем кнопку для перехода на следующий уровень
+        next_level = level + 1
+        buttons = [
+            [InlineKeyboardButton(text="Перейти на следующий уровень", callback_data=f"train_{poem_id}_{next_level}")]
+        ]
+        keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+
+        # Ответ пользователю с результатами и кнопкой
         await message.answer(
             f"Распознанный текст:\n{recognized_text}\n\n"
             f"Эталон:\n{original_text}\n\n"
-            f"Совпадение: {similarity}%"
+            f"Совпадение: {similarity}%",
+            reply_markup=keyboard
         )
 
     except Exception as e:
@@ -84,16 +95,3 @@ async def process_voice_message(message: types.Message, state: FSMContext):
         for path in [ogg_path, wav_path, clean_wav_path]:
             if os.path.exists(path):
                 os.remove(path)
-
-    # Добавляем кнопку для перехода на следующий уровень
-    next_level = level + 1
-    buttons = [
-        [InlineKeyboardButton(text="Перейти на следующий уровень", callback_data=f"train_{poem_id}_{next_level}")]
-    ]
-    keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
-
-    # Отправляем кнопку с переходом на следующий уровень
-    await message.answer(
-        "Перейди на следующий уровень, нажми кнопку ниже 👇",
-        reply_markup=keyboard
-    )

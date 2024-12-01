@@ -114,8 +114,12 @@ async def random_poem_handler(callback: CallbackQuery, state: FSMContext):
 # Общий обработчик для уровней тренировки
 async def handle_training_level(callback: CallbackQuery, level: int, state: FSMContext):
     await callback.message.delete()
+    # data = await state.get_data()
     poem_id = extract_poem_id(callback.data)
     user_id = callback.from_user.id
+
+    print(f"ID стихотворения: {poem_id}")
+
     async with get_async_session() as session:
         query = text("SELECT title, content FROM poems WHERE id = :id")
         poem = await session.execute(query, {"id": poem_id})
@@ -146,11 +150,9 @@ async def handle_training_level(callback: CallbackQuery, level: int, state: FSMC
             else:
                 buttons.append([InlineKeyboardButton(text="Я выучил!", callback_data=f"finished_{poem_id}")])
 
-            if buttons:
-                keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
-                await callback.message.answer(f"📜 <b>{title}</b>\n\n{modified_content}", reply_markup=keyboard)
-            else:
-                await callback.message.answer(f"📜 <b>{title}</b>\n\n{modified_content}")
+            keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
+            poem_message = await callback.message.answer(f"📜 <b>{title}</b>\n\n{modified_content}", reply_markup=keyboard)
+            await state.update_data(poem_message_id=poem_message.message_id)
         else:
             await callback.message.answer("Такое стихотворение не найдено.")
 
@@ -190,7 +192,7 @@ async def finished_handler(callback: CallbackQuery, state: FSMContext):
     )
 
     # Отправка сообщения с двумя кнопками
-    await callback.message.answer(
+    await callback.message.edit_text(
         text=share_message,
         reply_markup=share_keyboard
     )
