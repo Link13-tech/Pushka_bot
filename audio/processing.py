@@ -51,4 +51,3 @@ def merge_lines(text: str) -> str:
 def calculate_similarity(recognized_text: str, original_text: str) -> float:
     from difflib import SequenceMatcher
     return round(SequenceMatcher(None, recognized_text, original_text).ratio() * 100, 2)
-
