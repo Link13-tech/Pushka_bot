@@ -114,11 +114,13 @@ async def random_poem_handler(callback: CallbackQuery, state: FSMContext):
 # Общий обработчик для уровней тренировки
 async def handle_training_level(callback: CallbackQuery, level: int, state: FSMContext):
     await callback.message.delete()
-    # data = await state.get_data()
+    data = await state.get_data()
     poem_id = extract_poem_id(callback.data)
     user_id = callback.from_user.id
+    title = data["title"]
 
     print(f"ID стихотворения: {poem_id}")
+    print(f"Title стихотворения: {title}")
 
     async with get_async_session() as session:
         query = text("SELECT title, content FROM poems WHERE id = :id")
