@@ -13,8 +13,8 @@ def apply_difficulty_level(text: str, difficulty_level: int) -> str:
     """
 
     def apply_replacement(word: str, level: int) -> str:
-        # Используем регулярное выражение для разделения слова на буквы и знаки
-        match = re.match(r"([а-яА-ЯёЁa-zA-Z]+)(\W*)", word)
+        # Используем регулярное выражение для разделения слова на буквы и знаки (включая дефисы)
+        match = re.match(r"([а-яА-ЯёЁa-zA-Z\-]+)(\W*)", word)  # Добавлен дефис в регулярное выражение
         if not match:
             return word  # Если это не слово, возвращаем его без изменений
 
