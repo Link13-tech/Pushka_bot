@@ -17,18 +17,33 @@ def extract_poem_id(callback_data: str) -> int:
     return int(callback_data.split("_")[1])
 
 
-# Хендлер для поиска стихов по алфавиту
-@router.callback_query(lambda c: c.data == "search_alphabet")
+POEMS_PER_PAGE = 10
+
+
+# Хендлер поиска стихотворения по алфавиту
+@router.callback_query(lambda c: c.data.startswith("search_alphabet"))
 async def search_alphabet_handler(callback: CallbackQuery):
     await callback.message.edit_reply_markup(reply_markup=None)
     telegram_user_id = callback.from_user.id
-    # Получаем пользователя из базы данных
     async with get_async_session() as session:
         user = await user_db.get_or_create_user(session, telegram_user_id, callback.from_user.username)
-
-        # Теперь используем user.id, который является правильным user_id в базе данных
         user_id = user.id
-        # Запрос для получения стихов с правильным user_id
+
+        # Извлекаем номер страницы из callback_data
+        page = 1
+        if callback.data != "search_alphabet":
+            try:
+                page = int(callback.data.split("_")[-1])
+            except ValueError:
+                await callback.answer("Ошибка при обработке страницы.")
+                return
+
+        # Получаем общее количество стихов
+        count_query = text("SELECT COUNT(*) FROM poems")
+        count_result = await session.execute(count_query)
+        total_poems = count_result.scalar()
+
+        # Запрос для получения стихов с пагинацией
         query = text("""
             SELECT p.id, p.title,
                    COALESCE(up.status, 'not_started') AS status
@@ -36,13 +51,13 @@ async def search_alphabet_handler(callback: CallbackQuery):
             LEFT JOIN user_poems up
             ON p.id = up.poem_id AND up.user_id = :user_id
             ORDER BY p.title ASC
+            LIMIT :limit OFFSET :offset
         """)
-        result = await session.execute(query, {"user_id": user_id})
+        result = await session.execute(query, {"user_id": user_id, "limit": POEMS_PER_PAGE, "offset": (page - 1) * POEMS_PER_PAGE})
         poems_list = result.fetchall()
 
-        # Проверяем, есть ли стихи в списке
         if poems_list:
-            # Формируем клавиатуру с галочками на основе статусов
+            # Создание клавиатуры для вывода стихов
             keyboard = InlineKeyboardMarkup(
                 inline_keyboard=[
                     [
@@ -54,7 +69,21 @@ async def search_alphabet_handler(callback: CallbackQuery):
                     for poem in poems_list
                 ]
             )
-            await callback.message.answer("Выберите стихотворение:", reply_markup=keyboard)
+
+            # Добавление кнопок навигации
+            navigation_buttons = []
+            if page > 1:
+                navigation_buttons.append(InlineKeyboardButton(text="⬅️ Назад", callback_data=f"search_alphabet_{page - 1}"))
+            if page * POEMS_PER_PAGE < total_poems:
+                navigation_buttons.append(InlineKeyboardButton(text="Далее ➡️", callback_data=f"search_alphabet_{page + 1}"))
+
+            if navigation_buttons:
+                keyboard.inline_keyboard.append(navigation_buttons)
+
+            if callback.data == "search_alphabet":
+                await callback.message.answer("Выберите стихотворение:", reply_markup=keyboard)
+            else:
+                await callback.message.edit_text("Выберите стихотворение:", reply_markup=keyboard)
         else:
             await callback.message.answer("В базе данных пока нет стихотворений.")
 
