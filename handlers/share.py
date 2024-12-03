@@ -74,7 +74,12 @@ async def finished_or_share_handler(callback: CallbackQuery, state: FSMContext):
 
                 await callback.message.answer(text=share_message, reply_markup=share_keyboard)
             else:
-                await callback.message.answer("Этот стих еще не выучен. Завершите его изучение, чтобы поделиться!")
+                await callback.message.answer(
+                    text="Этот стих еще не выучен. Завершите его изучение, чтобы поделиться!",
+                    reply_markup=InlineKeyboardMarkup(
+                        inline_keyboard=[[InlineKeyboardButton(text="Выбрать стихотворение", callback_data="select_poem")]]
+                    )
+                )
 
 
 # Хендлер для кнопок дележа через VK или Одноклассники

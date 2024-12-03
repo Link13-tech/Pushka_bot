@@ -33,7 +33,7 @@ async def search_alphabet_handler(callback: CallbackQuery):
         page = 1
         if callback.data != "search_alphabet":
             try:
-                page = int(callback.data.split("_")[-1])  # Извлекаем номер страницы
+                page = int(callback.data.split("_")[-1])
             except ValueError:
                 await callback.answer("Ошибка при обработке страницы.")
                 return
