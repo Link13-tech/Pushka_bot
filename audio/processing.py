@@ -1,3 +1,4 @@
+import os
 import re
 import Levenshtein
 import soundfile as sf
@@ -59,7 +60,22 @@ def merge_lines(text: str) -> str:
 
 # Функция для вычисления схожести слов с учетом Levenshtein Distance
 def are_words_similar(word1: str, word2: str) -> bool:
-    return Levenshtein.distance(word1, word2) <= 1
+    # Проверяем замену окончаний "ие" на "ье" и наоборот
+    if (word1.endswith("ие") and word2.endswith("ье") and word1[:-2] == word2[:-2]) or \
+            (word1.endswith("ье") and word2.endswith("ие") and word1[:-2] == word2[:-2]):
+        return True
+
+    # Проверяем замену окончаний "ия" на "ье" и наоборот для слов "наслаждения" и "наслажденье"
+    if (word1.endswith("ия") and word2.endswith("ье") and word1[:-2] == word2[:-2]) or \
+            (word1.endswith("ье") and word2.endswith("ия") and word1[:-2] == word2[:-2]):
+        return True
+
+    # Проверяем расстояние Левенштейна для остальных случаев
+    distance = Levenshtein.distance(word1, word2)
+    if distance <= 1:
+        return True
+
+    return False
 
 
 # Сравнение текста с эталоном с использованием Jaccard Similarity с учетом схожести слов
@@ -73,7 +89,6 @@ def jaccard_similarity_with_fuzzy(recognized_text: str, original_text: str) -> f
     recognized_words = recognized_text.split()
     original_words = original_text.split()
 
-    # Нахождение пересечения двух множеств слов с учетом схожести по Левенштейну
     intersection = 0
     for word1 in recognized_words:
         for word2 in original_words:
@@ -82,7 +97,6 @@ def jaccard_similarity_with_fuzzy(recognized_text: str, original_text: str) -> f
                 original_words.remove(word2)
                 break
 
-    # Объединение всех слов (не только пересечение)
     union = len(recognized_words) + len(original_words)
 
     # Вычисление процента совпадения
@@ -90,21 +104,55 @@ def jaccard_similarity_with_fuzzy(recognized_text: str, original_text: str) -> f
     return round(similarity, 2)
 
 
-# Разбиение аудио на 1-минутные фрагменты
-def split_audio(input_path: str, segment_length_ms: int = 60000):
+# Разбиение аудио на 40-секундные фрагменты с перекрытием и удалением дубликатов на стыке фрагментов
+def split_audio(input_path: str, segment_length_ms: int = 40000, overlap_ms: int = 2000, min_segment_length_ms: int = 2000):
     audio = AudioSegment.from_wav(input_path)
     duration_ms = len(audio)
 
-    # Проверка, если длительность больше 1 минуты (60 секунд = 60000 миллисекунд)
-    if duration_ms > 60000:
-        print(f"Длительность аудио больше 1 минуты ({duration_ms / 1000} секунд). Разбиваем на фрагменты.")
+    if duration_ms > segment_length_ms:
+        print(f"Длительность аудио больше 40 секунд ({duration_ms / 1000} секунд). Разбиваем на фрагменты.")
         segments = []
-        for i in range(0, duration_ms, segment_length_ms):
+        for i in range(0, duration_ms, segment_length_ms - overlap_ms):
             segment = audio[i:i + segment_length_ms]
-            segment_path = f"audio/segment_{i // segment_length_ms}.wav"
+
+            if len(segment) < min_segment_length_ms:
+                continue
+
+            segment_path = f"audio/segment_{i // (segment_length_ms - overlap_ms)}.wav"
             segment.export(segment_path, format="wav")
             segments.append(segment_path)
+
         return segments
     else:
-        print(f"Длительность аудио меньше или равна 1 минуте ({duration_ms / 1000} секунд).")
-        return [input_path]  # Возвращаем оригинальный файл, если его длительность меньше 1 минуты
+        print(f"Длительность аудио меньше или равна 40 секундам ({duration_ms / 1000} секунд).")
+        return [input_path]
+
+
+# Функция для удаления дубликатов на стыке фрагментов (перекрытие)
+def remove_overlap_duplicates(segments: list) -> str:
+    merged_text = ""
+    seen_words = set()
+    previous_segment_text = []
+
+    for i, segment_path in enumerate(segments):
+        with open(segment_path, 'r') as segment:
+            words = segment.read().split()
+
+        if i > 0:
+            current_segment_text = words[:2]
+            previous_segment_text = previous_segment_text[-2:]
+
+            # Проверка на дублирование первых 2 слов с предыдущим сегментом
+            if current_segment_text == previous_segment_text:
+                words = words[2:]
+
+        filtered_words = [word for word in words if word not in seen_words]
+
+        merged_text += " ".join(filtered_words) + " "
+        seen_words.update(filtered_words)
+
+        previous_segment_text = words
+
+        os.remove(segment_path)
+
+    return merged_text.strip()
