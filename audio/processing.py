@@ -47,6 +47,7 @@ def recognize_speech_from_audio(file_path: str) -> str:
 # Функция для очистки текста от знаков препинания, приведения к нижнему регистру, замены ё на е и удаления лишних пробелов
 def clean_text(text: str) -> str:
     text = text.replace('ё', 'е').replace('Ё', 'Е')
+    text = re.sub(r'(?<=\w)-(?=\w)', ' ', text)
     text = re.sub(r'[^\w\s]', '', text)
     text = text.lower()
     text = re.sub(r'\s+', ' ', text).strip()
