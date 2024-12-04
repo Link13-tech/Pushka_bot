@@ -182,7 +182,7 @@ async def handle_training_level(callback: CallbackQuery, level: int, state: FSMC
                 buttons.append([InlineKeyboardButton(text="Я выучил!", callback_data=f"finished_{poem_id}")])
 
             keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
-            poem_message = await callback.message.answer(f"📜 <b>{title}</b>\n\n{modified_content}", reply_markup=keyboard)
+            poem_message = await callback.message.answer(f"📜 <b>{title}</b>\n{modified_content}", reply_markup=keyboard)
             await state.update_data(poem_message_id=poem_message.message_id)
         else:
             await callback.message.answer("Такое стихотворение не найдено.")
