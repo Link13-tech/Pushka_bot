@@ -105,12 +105,12 @@ def jaccard_similarity_with_fuzzy(recognized_text: str, original_text: str) -> f
 
 
 # Разбиение аудио на 40-секундные фрагменты с перекрытием и удалением дубликатов на стыке фрагментов
-def split_audio(input_path: str, segment_length_ms: int = 40000, overlap_ms: int = 2000, min_segment_length_ms: int = 2000):
+def split_audio(input_path: str, segment_length_ms: int = 39000, overlap_ms: int = 2000, min_segment_length_ms: int = 2000):
     audio = AudioSegment.from_wav(input_path)
     duration_ms = len(audio)
 
     if duration_ms > segment_length_ms:
-        print(f"Длительность аудио больше 40 секунд ({duration_ms / 1000} секунд). Разбиваем на фрагменты.")
+        print(f"Длительность аудио больше 39 секунд ({duration_ms / 1000} секунд). Разбиваем на фрагменты.")
         segments = []
         for i in range(0, duration_ms, segment_length_ms - overlap_ms):
             segment = audio[i:i + segment_length_ms]
@@ -124,7 +124,7 @@ def split_audio(input_path: str, segment_length_ms: int = 40000, overlap_ms: int
 
         return segments
     else:
-        print(f"Длительность аудио меньше или равна 40 секундам ({duration_ms / 1000} секунд).")
+        print(f"Длительность аудио меньше или равна 39 секундам ({duration_ms / 1000} секунд).")
         return [input_path]
 
 
