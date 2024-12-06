@@ -11,7 +11,7 @@ from audio.processing import (
     convert_ogg_to_wav,
     reduce_noise,
     recognize_speech_from_audio,
-    clean_text, merge_lines, jaccard_similarity_with_fuzzy,
+    clean_text, merge_lines, jaccard_similarity_with_fuzzy, restore_structure_with_original_words,
 )
 
 router = Router()
@@ -70,6 +70,8 @@ async def process_voice_message(message: types.Message, state: FSMContext):
         # Сравнение текста
         similarity = jaccard_similarity_with_fuzzy(recognized_text, cleaned_original_text)
 
+        restored_text = restore_structure_with_original_words(recognized_text, original_text)
+
         await message.bot.delete_message(message.chat.id, poem_message_id)
 
         # Добавляем кнопку для перехода на следующий уровень
@@ -81,7 +83,7 @@ async def process_voice_message(message: types.Message, state: FSMContext):
 
         # Ответ пользователю с результатами и кнопкой
         await message.answer(
-            f"🎙️ Распознанный текст:\n\n{recognized_text}\n\n"
+            f"🎙️ Распознанный текст:\n{restored_text}\n\n"
             f"📜 Эталон:\n{original_text}\n\n"
             f"✅ Совпадение: {similarity}%",
             reply_markup=keyboard

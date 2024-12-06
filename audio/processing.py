@@ -1,5 +1,7 @@
 import os
 import re
+from difflib import SequenceMatcher
+
 import Levenshtein
 import soundfile as sf
 import speech_recognition as sr
@@ -22,7 +24,7 @@ def reduce_noise(input_path: str, output_path: str):
 
 
 # Разбиение аудио на 40-секундные фрагменты с перекрытием и удалением дубликатов на стыке фрагментов
-def split_audio(input_path: str, segment_length_ms: int = 40000, overlap_ms: int = 1500, min_segment_length_ms: int = 2000):
+def split_audio(input_path: str, segment_length_ms: int = 40000, overlap_ms: int = 5000):
     audio = AudioSegment.from_wav(input_path)
     duration_ms = len(audio)
 
@@ -31,10 +33,6 @@ def split_audio(input_path: str, segment_length_ms: int = 40000, overlap_ms: int
         segments = []
         for i in range(0, duration_ms, segment_length_ms - overlap_ms):
             segment = audio[i:i + segment_length_ms]
-
-            if len(segment) < min_segment_length_ms:
-                continue
-
             segment_path = f"audio/segment_{i // (segment_length_ms - overlap_ms)}.wav"
             segment.export(segment_path, format="wav")
             segments.append(segment_path)
@@ -79,7 +77,7 @@ def recognize_speech_from_audio(file_path: str) -> str:
 
 # Функция для удаления дубликатов на стыке фрагментов (перекрытие) с учетом частичного совпадения
 def remove_overlap_duplicates(previous_segment_text: list, current_segment_text: str) -> str:
-    overlap_count = 4
+    overlap_count = 6
 
     previous_segment_text = previous_segment_text[-overlap_count:]
     previous_segment_text_lower = [word.lower() for word in previous_segment_text]
@@ -154,3 +152,41 @@ def jaccard_similarity_with_fuzzy(recognized_text: str, original_text: str) -> f
 
     similarity = (intersection / union) * 100
     return round(similarity, 2)
+
+
+# Функция для восстановления структуры текста с учетом оригинальных слов и пунктуации
+def restore_structure_with_original_words(recognized_text: str, original_text: str) -> str:
+    recognized_text = clean_text(recognized_text)
+
+    recognized_words = recognized_text.split()
+    original_lines = original_text.splitlines()
+
+    structured_text = []
+    recognized_index = 0
+
+    for line in original_lines:
+        line_words = re.findall(r'\w+|[^\w\s]', line)
+        line_result = []
+
+        for word in line_words:
+            if re.match(r'[^\w\s]', word):
+                if recognized_index < len(recognized_words):
+                    line_result.append(word)
+                continue
+
+            if recognized_index < len(recognized_words):
+                current_word = recognized_words[recognized_index]
+
+                similarity = SequenceMatcher(None, word.lower(), current_word.lower()).ratio()
+                if similarity >= 0.7:
+                    line_result.append(current_word)
+                    recognized_index += 1
+                else:
+                    line_result.append(current_word)
+                    recognized_index += 1
+            else:
+                continue
+
+        structured_text.append(" ".join(line_result))
+
+    return "\n".join(structured_text)
