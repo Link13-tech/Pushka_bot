@@ -23,13 +23,13 @@ def reduce_noise(input_path: str, output_path: str):
     sf.write(output_path, reduced_noise, sr_rate)
 
 
-# Разбиение аудио на 40-секундные фрагменты с перекрытием и удалением дубликатов на стыке фрагментов
-def split_audio(input_path: str, segment_length_ms: int = 40000, overlap_ms: int = 5000):
+# Разбиение аудио на 35-секундные фрагменты с перекрытием и удалением дубликатов на стыке фрагментов
+def split_audio(input_path: str, segment_length_ms: int = 35000, overlap_ms: int = 5000):
     audio = AudioSegment.from_wav(input_path)
     duration_ms = len(audio)
 
     if duration_ms > segment_length_ms:
-        print(f"Длительность аудио больше 40 секунд ({duration_ms / 1000} секунд). Разбиваем на фрагменты.")
+        print(f"Длительность аудио больше 35 секунд ({duration_ms / 1000} секунд). Разбиваем на фрагменты.")
         segments = []
         for i in range(0, duration_ms, segment_length_ms - overlap_ms):
             segment = audio[i:i + segment_length_ms]
@@ -39,7 +39,7 @@ def split_audio(input_path: str, segment_length_ms: int = 40000, overlap_ms: int
 
         return segments
     else:
-        print(f"Длительность аудио меньше или равна 40 секундам ({duration_ms / 1000} секунд).")
+        print(f"Длительность аудио меньше или равна 35 секундам ({duration_ms / 1000} секунд).")
         return [input_path]
 
 
@@ -77,7 +77,7 @@ def recognize_speech_from_audio(file_path: str) -> str:
 
 # Функция для удаления дубликатов на стыке фрагментов (перекрытие) с учетом частичного совпадения
 def remove_overlap_duplicates(previous_segment_text: list, current_segment_text: str) -> str:
-    overlap_count = 6
+    overlap_count = 8
 
     previous_segment_text = previous_segment_text[-overlap_count:]
     previous_segment_text_lower = [word.lower() for word in previous_segment_text]
