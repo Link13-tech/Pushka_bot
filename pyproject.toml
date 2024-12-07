@@ -17,6 +17,7 @@ noisereduce = "^3.0.3"
 librosa = "^0.10.2.post1"
 speechrecognition = "^3.11.0"
 soundfile = "^0.12.1"
+levenshtein = "^0.26.1"
 
 
 
