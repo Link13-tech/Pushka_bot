@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 
 from database.database import get_async_session
-from database.voice_ops import get_original_text
+from database.voice_db import get_original_text
 from audio.processing import (
     convert_ogg_to_wav,
     reduce_noise,
