@@ -64,6 +64,9 @@ def recognize_speech_from_audio(file_path: str) -> str:
         except sr.RequestError as e:
             segment_text = f" [Ошибка сервиса распознавания: {e}] "
 
+        if "не удалось распознать текст" in segment_text.lower():
+            continue
+
         if i > 0:
             segment_text = remove_overlap_duplicates(previous_segment_text, segment_text)
 
@@ -89,12 +92,14 @@ def remove_overlap_duplicates(previous_segment_text: list, current_segment_text:
     common_words = set(previous_segment_text_lower) & set(current_segment_text_lower)
     print(common_words)
 
-    filtered_first_words = [
-        word for word in current_segment_text if word.lower() not in common_words
-    ]
+    filtered_first_words = []
+    for word in current_segment_text:
+        if word.lower() in common_words and common_words:
+            common_words.remove(word.lower())
+        else:
+            filtered_first_words.append(word)
 
     remaining_words = current_segment_words[overlap_count:]
-
     return " ".join(filtered_first_words + remaining_words)
 
 
@@ -170,8 +175,6 @@ def restore_structure_with_original_words(recognized_text: str, original_text: s
 
         for word in line_words:
             if re.match(r'[^\w\s]', word):
-                if recognized_index < len(recognized_words):
-                    line_result.append(word)
                 continue
 
             if recognized_index < len(recognized_words):
