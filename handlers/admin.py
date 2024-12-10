@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 
+import xlsxwriter
 from aiogram import Router, types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
@@ -10,9 +11,7 @@ from database.database import get_async_session
 from models import Poem
 from models.user import User, UserRole
 from models.user_poem import UserPoem
-from openpyxl import Workbook
-from openpyxl.chart import BarChart, Reference, PieChart
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, FSInputFile, ReplyKeyboardRemove
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, FSInputFile
 
 router = Router()
 
@@ -152,21 +151,20 @@ async def show_stats_on_screen(message: types.Message):
         poem_titles = {poem.id: poem.title for poem in poems.all()}
 
     stats_message = f"Общее количество пользователей: <b>{total_users}</b>\n\n"
-    stats_message += "Популярные стихотворения:\n"
-    stats_message += f"{'Название'.ljust(52)} {'Кол-во'.rjust(6)}\n"
-    stats_message += "=" * 58 + "\n"
+    stats_message += "Популярные стихотворения:\n\n"
 
     for poem_id, count in popular_poems:
         title = poem_titles.get(poem_id, "Неизвестное стихотворение")
-        stats_message += f"{title[:50].ljust(52)} {str(count).rjust(6)} пользователей\n"
+        stats_message += f"<b>{title[0]}</b>{title[1:]} - <b>{str(count)}</b> пользователя(лей)\n"
 
     await message.answer(stats_message)
 
 
-async def generate_stats_excel(message: types.Message):
+async def generate_stats_excel(message):
     """
-    Генерируем Excel-файл со статистикой и добавляем диаграммы.
+    Генерация Excel-файла со статистикой и диаграммами с использованием xlsxwriter.
     """
+    # Получение данных из базы
     async with get_async_session() as session:
         total_users = await session.scalar(select(func.count(User.id)))
 
@@ -181,6 +179,7 @@ async def generate_stats_excel(message: types.Message):
         poems = await session.execute(select(Poem.id, Poem.title).where(Poem.id.in_(poem_ids)))
         poem_titles = {poem.id: poem.title for poem in poems.all()}
 
+    # Директория для сохранения файлов
     stats_dir = "stats"
     if not os.path.exists(stats_dir):
         os.makedirs(stats_dir)
@@ -189,46 +188,62 @@ async def generate_stats_excel(message: types.Message):
     file_name = f"stats_{current_time}.xlsx"
     file_path = os.path.join(stats_dir, file_name)
 
-    workbook = Workbook()
-    sheet = workbook.active
-    sheet.title = "Статистика"
+    workbook = xlsxwriter.Workbook(file_path)
+    worksheet = workbook.add_worksheet("Статистика")
 
-    # Устанавливаем ширину столбцов
-    sheet.column_dimensions['A'].width = 236 / 7
-    sheet.column_dimensions['B'].width = 180 / 7
+    # Установка ширины столбцов
+    worksheet.set_column("A:A", 32)
+    worksheet.set_column("B:B", 13)
 
-    sheet.append([])
-    sheet.append(["Общее количество пользователей", total_users])
-    sheet.append([])
-    sheet.append(["Стихотворение", "Количество пользователей"])
+    bold_format = workbook.add_format({"bold": True})
 
+    worksheet.write("A2", "Общее количество пользователей", bold_format)
+    worksheet.write("B2", total_users, bold_format)
+    worksheet.write("A4", "Стихотворение", bold_format)
+    worksheet.write("B4", "Пользователи", bold_format)
+
+    row = 5
     for poem_id, count in popular_poems:
         poem_title = poem_titles.get(poem_id, f"Неизвестное стихотворение (ID {poem_id})")
-        sheet.append([poem_title, count])
+        worksheet.write(row, 0, poem_title)
+        worksheet.write(row, 1, count)
+        row += 1
 
-    # Добавление столбчатой диаграммы (Bar Chart) на D2
-    bar_chart = BarChart()
-    data = Reference(sheet, min_col=2, min_row=4, max_col=2, max_row=len(popular_poems) + 3)
-    categories = Reference(sheet, min_col=1, min_row=4, max_row=len(popular_poems) + 3)
-    bar_chart.add_data(data, titles_from_data=True)
-    bar_chart.set_categories(categories)
-    bar_chart.title = "Популярность стихотворений"
-    bar_chart.x_axis.title = "Стихотворения"
-    bar_chart.y_axis.title = "Количество пользователей"
+        # Добавление столбчатой диаграммы
+    bar_chart = workbook.add_chart({"type": "column"})
 
-    sheet.add_chart(bar_chart, "D2")
+    bar_chart.add_series({
+        "categories": f"=Статистика!$A$6:$A${row}",
+        "values": f"=Статистика!$B$6:$B${row}",
+    })
 
-    # Добавление круговой диаграммы (Pie Chart) на D17
-    pie_chart = PieChart()
-    data_pie = Reference(sheet, min_col=2, min_row=4, max_col=2, max_row=len(popular_poems) + 3)
-    labels = Reference(sheet, min_col=1, min_row=4, max_row=len(popular_poems) + 3)
-    pie_chart.add_data(data_pie, titles_from_data=True)
-    pie_chart.set_categories(labels)
-    pie_chart.title = "Распределение популярности стихотворений"
+    bar_chart.set_title({"name": "Популярность стихотворений"})
+    bar_chart.set_x_axis({
+        "name": "Стихотворения",
+        "name_font": {"bold": True},
+    })
+    bar_chart.set_y_axis({
+        "name": "Количество пользователей",
+        "name_font": {"bold": True},
+    })
 
-    sheet.add_chart(pie_chart, "D17")
+    bar_chart.set_legend({"none": True})
 
-    workbook.save(file_path)
+    worksheet.insert_chart("D2", bar_chart)
+
+    # Добавление круговой диаграммы
+    pie_chart = workbook.add_chart({"type": "pie"})
+
+    pie_chart.add_series({
+        "name": "Распределение популярности стихотворений",
+        "categories": f"=Статистика!$A$6:$A${row}",
+        "values": f"=Статистика!$B$6:$B${row}",
+    })
+
+    pie_chart.set_title({"name": "Распределение популярности стихотворений"})
+    worksheet.insert_chart("D17", pie_chart)
+
+    workbook.close()
 
     input_file = FSInputFile(file_path)
     await message.answer_document(input_file, filename=file_name)
