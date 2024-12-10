@@ -191,6 +191,15 @@ async def handle_training_level(callback: CallbackQuery, level: int, state: FSMC
 # Универсальный хендлер для всех уровней тренировки
 @router.callback_query(lambda c: c.data.startswith("train_"))
 async def training_handler(callback: CallbackQuery, state: FSMContext):
+    state_data = await state.get_data()
+    message_ids = state_data.get("message_ids", [])
+    if len(message_ids) > 1:
+        for message_id in message_ids[:-1]:
+            try:
+                await callback.message.bot.delete_message(callback.message.chat.id, message_id)
+            except Exception as e:
+                print(f"Ошибка при удалении старого сообщения: {e}")
+
     level = int(callback.data.split("_")[2])
     await handle_training_level(callback, level, state)
 

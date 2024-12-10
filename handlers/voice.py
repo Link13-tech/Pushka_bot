@@ -1,3 +1,4 @@
+import math
 import os
 
 from aiogram import Router, types
@@ -19,6 +20,25 @@ router = Router()
 
 class RecordVoiceState(StatesGroup):
     waiting_for_voice = State()
+
+
+# Функция для отправки длинных сообщений с кнопкой только в последнем сообщении
+async def send_long_message_with_button(bot, chat_id, text, keyboard):
+    max_message_length = 4096
+    num_parts = math.ceil(len(text) / max_message_length)
+
+    message_ids = []
+
+    for i in range(num_parts):
+        part = text[i * max_message_length: (i + 1) * max_message_length]
+        if i == num_parts - 1:
+            message = await bot.send_message(chat_id, part, reply_markup=keyboard)
+        else:
+            message = await bot.send_message(chat_id, part)
+
+        message_ids.append(message.message_id)
+
+    return message_ids
 
 
 # Обработчик кнопки "Записать голос"
@@ -81,13 +101,14 @@ async def process_voice_message(message: types.Message, state: FSMContext):
         ]
         keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
 
-        # Ответ пользователю с результатами и кнопкой
-        await message.answer(
+        text_to_send = (
             f"🎙️ Распознанный текст:\n{restored_text}\n\n"
             f"📜 Эталон:\n{original_text}\n\n"
-            f"✅ Совпадение: {similarity}%",
-            reply_markup=keyboard
+            f"✅ Совпадение: {similarity}%"
         )
+
+        message_ids = await send_long_message_with_button(message.bot, message.chat.id, text_to_send, keyboard)
+        await state.update_data(message_ids=message_ids)
 
     except Exception as e:
         await message.answer(f"Произошла ошибка при обработке аудио: {e}")
