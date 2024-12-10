@@ -6,11 +6,11 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.default import DefaultBotProperties
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.types import BotCommand
 from aiogram.enums import ParseMode
 from aiogram import types, F
 from dotenv import load_dotenv
 from handlers.start import router as start_router
+from handlers.admin import router as admin_router
 from handlers.poems import router as poems_router
 from handlers.share import router as share_router
 from handlers.voice import router as voice_router
@@ -31,22 +31,11 @@ bot = Bot(
     default=DefaultBotProperties(parse_mode=ParseMode.HTML)
 )
 dp = Dispatcher(storage=MemoryStorage())
+dp.include_router(admin_router)
 dp.include_router(start_router)
 dp.include_router(poems_router)
 dp.include_router(share_router)
 dp.include_router(voice_router)
-
-
-async def set_bot_commands() -> None:
-    """
-    Устанавливаем команды для меню бота.
-    """
-    commands = [
-        BotCommand(command="start", description="Начать работу с ботом"),
-        BotCommand(command="description", description="Описание бота"),
-        BotCommand(command="contact", description="Контакты для связи"),
-    ]
-    await bot.set_my_commands(commands)
 
 
 @dp.message(F.text.lower() == "/description")
@@ -72,7 +61,6 @@ async def contact_command(message: types.Message):
 
 
 async def main() -> None:
-    await set_bot_commands()
     await dp.start_polling(bot)
 
 

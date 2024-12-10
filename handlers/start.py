@@ -2,8 +2,9 @@ from aiogram import Router
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.filters import Command
 from aiogram import types
+from commands.commands import setup_commands_for_user
 from database import user_db
-from database.database import get_async_session
+from database.database import get_async_session, async_session
 
 router = Router()
 
@@ -21,6 +22,8 @@ async def start_handler(message: Message):
     # Получаем или создаем пользователя в базе данных
     async with get_async_session() as session:
         await user_db.get_or_create_user(session, telegram_id, username)
+
+    await setup_commands_for_user(message.bot, message.chat.id, async_session)
 
     # Кнопка для выбора стихотворения
     keyboard = InlineKeyboardMarkup(
