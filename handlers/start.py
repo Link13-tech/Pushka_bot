@@ -1,4 +1,5 @@
 from aiogram import Router
+from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.filters import Command
 from aiogram import types
@@ -10,7 +11,7 @@ router = Router()
 
 
 @router.message(Command("start"))
-async def start_handler(message: Message):
+async def start_handler(message: Message, state: FSMContext):
     """
     Хендлер для команды /start. Показывает приветственное сообщение и одну кнопку.
     Создает пользователя, если его нет в базе данных.
@@ -32,13 +33,14 @@ async def start_handler(message: Message):
         ]]
     )
 
-    # Отправляем приветственное сообщение
-    await message.answer(
-        f"Привет, {username}! Добро пожаловать в бот для изучения стихотворений."
-        f"Перед погружением в литературу золотого века не забудь познакомиться с инструкцией,"
-        f"которая поможет тебе в изучении стихов, все полезные команды найдешь в меню ☺",
+    hello_message = await message.answer(
+        f"Привет, {username}! Добро пожаловать в бот для изучения стихотворений. "
+        f"Перед погружением в литературу золотого века не забудь познакомиться с инструкцией, "
+        f"которая поможет тебе в изучении стихов. Все полезные команды найдешь в меню ☺",
         reply_markup=keyboard,
     )
+
+    await state.update_data(hello_message_id=hello_message.message_id)
 
 
 @router.message(lambda message: message.content_type != types.ContentType.VOICE)
