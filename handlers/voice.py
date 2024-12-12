@@ -1,3 +1,4 @@
+# import datetime
 import math
 import os
 
@@ -12,7 +13,7 @@ from audio.processing import (
     convert_ogg_to_wav,
     reduce_noise,
     recognize_speech_from_audio,
-    clean_text, merge_lines, jaccard_similarity_with_fuzzy, restore_structure_with_original_words,
+    clean_text, merge_lines, jaccard_similarity_with_fuzzy, restore_structure_with_original_words, upload_to_yandex_storage,
 )
 
 router = Router()
@@ -64,12 +65,16 @@ async def process_voice_message(message: types.Message, state: FSMContext):
     level = state_data["current_level"]
     poem_message_id = state_data.get("poem_message_id")
 
+    # current_datetime = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     # Скачиваем голосовое сообщение
     voice_file = await message.bot.get_file(message.voice.file_id)
-    ogg_path = f"audio/files/{user_id}_voice.ogg"
-    wav_path = f"audio/files/{user_id}_voice.wav"
-    clean_wav_path = f"audio/files/{user_id}_voice_clean.wav"
+    ogg_path = f"audio/files/{user_id}_{poem_id}_{level}_voice.ogg"
+    wav_path = f"audio/files/{user_id}_{poem_id}_{level}_voice.wav"
+    clean_wav_path = f"audio/files/{user_id}_{poem_id}_{level}_voice_clean.wav"
     await message.bot.download_file(voice_file.file_path, ogg_path)
+
+    audio_url = upload_to_yandex_storage(ogg_path, str(user_id), poem_id)
+    print(audio_url)
 
     try:
         # Обработка аудио
@@ -94,11 +99,18 @@ async def process_voice_message(message: types.Message, state: FSMContext):
 
         await message.bot.delete_message(message.chat.id, poem_message_id)
 
-        # Добавляем кнопку для перехода на следующий уровень
-        next_level = level + 1
-        buttons = [
-            [InlineKeyboardButton(text="Перейти на следующий уровень", callback_data=f"train_{poem_id}_{next_level}")]
-        ]
+        max_level = 4
+
+        if level < max_level:
+            next_level = level + 1
+            buttons = [
+                [InlineKeyboardButton(text="Перейти на следующий уровень", callback_data=f"train_{poem_id}_{next_level}")]
+            ]
+        else:
+            buttons = [
+                [InlineKeyboardButton(text="Я выучил!", callback_data=f"finished_{poem_id}")]
+            ]
+
         keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
 
         text_to_send = (

@@ -43,7 +43,7 @@ async def start_handler(message: Message, state: FSMContext):
     await state.update_data(hello_message_id=hello_message.message_id)
 
 
-@router.message(lambda message: message.content_type != types.ContentType.VOICE)
+@router.message(lambda message: message.content_type != types.ContentType.VOICE and not message.text.startswith("Получен код авторизации ВКонтакте:"))
 async def handle_unrecognized_message(message: types.Message):
     """
     Обработчик для всех сообщений, которые не являются голосовыми сообщениями.

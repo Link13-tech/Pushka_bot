@@ -3,11 +3,25 @@ import re
 from difflib import SequenceMatcher
 
 import Levenshtein
+import boto3
 import soundfile as sf
 import speech_recognition as sr
+from botocore.exceptions import NoCredentialsError
 from pydub import AudioSegment
 import noisereduce as nr
 import librosa
+
+
+# Конфигурация для подключения к Yandex Object Storage через Boto3
+def get_s3_client():
+    s3_client = boto3.client(
+        's3',
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+        endpoint_url="https://storage.yandexcloud.net",
+        region_name="ru-central1"
+    )
+    return s3_client
 
 
 # Конвертация аудио из OGG в WAV
@@ -193,3 +207,21 @@ def restore_structure_with_original_words(recognized_text: str, original_text: s
         structured_text.append(" ".join(line_result))
 
     return "\n".join(structured_text)
+
+
+# Загружает файл в Yandex Object Storage
+def upload_to_yandex_storage(file_path: str, telegram_id: str, poem_id: int) -> str:
+    try:
+        s3_client = get_s3_client()
+        bucket_name = 'pushka-bot-storage'
+        object_name = f"voice_messages/{telegram_id}/{poem_id}/{os.path.basename(file_path)}"
+
+        with open(file_path, 'rb') as file_data:
+            s3_client.upload_fileobj(file_data, bucket_name, object_name)
+
+        file_url = f"https://storage.yandexcloud.net/{bucket_name}/{object_name}"
+        return file_url
+    except NoCredentialsError:
+        raise Exception("Credentials not available for Yandex Object Storage.")
+    except Exception as e:
+        raise Exception(f"Error uploading file: {e}")
