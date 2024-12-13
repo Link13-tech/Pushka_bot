@@ -58,6 +58,7 @@ cd pushka_bot
 ```bash
 poetry install
 ```
+Создайте базу данных.
 
 Создайте файл `.env` и добавьте ваш Telegram Token и URL базы данных:
 
@@ -71,6 +72,7 @@ DATABASE_URL=your-database-arl-adress
 ```bash
 alembic upgrade head
 ```
+Заполните таблицу poem данными.
 
 ## Запуск
 
