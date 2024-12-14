@@ -16,6 +16,18 @@ async def start_handler(message: Message, state: FSMContext):
     Хендлер для команды /start. Показывает приветственное сообщение и одну кнопку.
     Создает пользователя, если его нет в базе данных.
     """
+
+    # Удаляем кнопки с последних сообщений (если были)
+    for message_id in range(message.message_id - 20, message.message_id):
+        try:
+            await message.bot.edit_message_reply_markup(
+                chat_id=message.chat.id,
+                message_id=message_id,
+                reply_markup=None  # Удаляем кнопки
+            )
+        except Exception:
+            pass
+
     # Получаем данные пользователя
     telegram_id = message.from_user.id
     username = message.from_user.username
