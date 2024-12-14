@@ -4,6 +4,11 @@ FROM python:3.12-slim
 # Устанавливаем рабочую директорию в контейнере
 WORKDIR /app
 
+# Устанавливаем ffmpeg
+RUN apt-get update && \
+    apt-get install -y ffmpeg && \
+    rm -rf /var/lib/apt/lists/*
+
 # Копируем файлы проекта
 COPY . .
 
