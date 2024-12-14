@@ -4,6 +4,9 @@ FROM python:3.12-slim
 # Устанавливаем рабочую директорию в контейнере
 WORKDIR /app
 
+# Создаем необходимые директории для хранения аудиофайлов
+RUN mkdir -p /app/audio/files
+
 # Устанавливаем ffmpeg
 RUN apt-get update && \
     apt-get install -y ffmpeg && \
