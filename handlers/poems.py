@@ -29,6 +29,9 @@ async def search_alphabet_handler(callback: CallbackQuery):
         user = await user_db.get_or_create_user(session, telegram_user_id, callback.from_user.username)
         user_id = user.id
 
+        if callback.data == "search_alphabet":
+            await callback.message.delete()
+
         # Извлекаем номер страницы из callback_data
         page = 1
         if callback.data != "search_alphabet":
@@ -115,9 +118,10 @@ async def poem_selected_handler(callback: CallbackQuery, state: FSMContext):
             await callback.message.answer("Такое стихотворение не найдено.")
 
 
+# Хендлер для случайного стихотворения
 @router.callback_query(lambda c: c.data == "random_poem")
 async def random_poem_handler(callback: CallbackQuery, state: FSMContext):
-    await callback.message.edit_reply_markup(reply_markup=None)
+    await callback.message.delete()
     async with get_async_session() as session:
         query = text("SELECT title, id FROM poems ORDER BY RANDOM() LIMIT 1")
         poem = await session.execute(query)
@@ -179,6 +183,7 @@ async def handle_training_level(callback: CallbackQuery, level: int, state: FSMC
                 buttons.append([InlineKeyboardButton(text="Записать голос", callback_data=f"record_{poem_id}_{next_level}")])
                 buttons.append([InlineKeyboardButton(text="Перейти на следующий уровень", callback_data=f"train_{poem_id}_{next_level}")])
             else:
+                buttons.append([InlineKeyboardButton(text="Записать голос", callback_data=f"record_{poem_id}_{level}")])
                 buttons.append([InlineKeyboardButton(text="Я выучил!", callback_data=f"finished_{poem_id}")])
 
             keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
