@@ -5,7 +5,6 @@ from aiogram import Router, types
 from aiogram.types import CallbackQuery, ContentType, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
-
 from database.database import get_async_session
 from database.voice_db import get_original_text
 from audio.processing import (
@@ -95,10 +94,18 @@ async def process_voice_message(message: types.Message, state: FSMContext):
         await message.bot.delete_message(message.chat.id, poem_message_id)
 
         # Добавляем кнопку для перехода на следующий уровень
-        next_level = level + 1
-        buttons = [
-            [InlineKeyboardButton(text="Перейти на следующий уровень", callback_data=f"train_{poem_id}_{next_level}")]
-        ]
+        max_level = 4
+
+        if level < max_level:
+            next_level = level + 1
+            buttons = [
+                [InlineKeyboardButton(text="Перейти на следующий уровень", callback_data=f"train_{poem_id}_{next_level}")]
+            ]
+        else:
+            buttons = [
+                [InlineKeyboardButton(text="Я выучил!", callback_data=f"finished_{poem_id}")]
+            ]
+
         keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
 
         text_to_send = (

@@ -183,6 +183,7 @@ async def handle_training_level(callback: CallbackQuery, level: int, state: FSMC
                 buttons.append([InlineKeyboardButton(text="Записать голос", callback_data=f"record_{poem_id}_{next_level}")])
                 buttons.append([InlineKeyboardButton(text="Перейти на следующий уровень", callback_data=f"train_{poem_id}_{next_level}")])
             else:
+                buttons.append([InlineKeyboardButton(text="Записать голос", callback_data=f"record_{poem_id}_{level}")])
                 buttons.append([InlineKeyboardButton(text="Я выучил!", callback_data=f"finished_{poem_id}")])
 
             keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
