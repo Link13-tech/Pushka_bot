@@ -1,6 +1,6 @@
 from aiogram import Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaAnimation, FSInputFile
 
 from database import user_db
 from database.database import get_async_session
@@ -80,12 +80,29 @@ async def search_alphabet_handler(callback: CallbackQuery):
             if navigation_buttons:
                 keyboard.inline_keyboard.append(navigation_buttons)
 
-            if callback.data == "search_alphabet":
-                await callback.message.answer("Выберите стихотворение:", reply_markup=keyboard)
+                gif_path = "media/dialogs/book.gif"
+
+                if callback.data == "search_alphabet":
+                    # Используем FSInputFile для загрузки GIF
+                    gif = FSInputFile(gif_path)
+                    await callback.message.answer_animation(
+                        gif,
+                        caption="Выберите стихотворение:",
+                        reply_markup=keyboard
+                    )
+                else:
+                    # Редактируем сообщение с GIF
+                    gif = FSInputFile(gif_path)
+                    media = InputMediaAnimation(
+                        media=gif,
+                        caption="Выберите стихотворение:"
+                    )
+                    await callback.message.edit_media(
+                        media=media,
+                        reply_markup=keyboard
+                    )
             else:
-                await callback.message.edit_text("Выберите стихотворение:", reply_markup=keyboard)
-        else:
-            await callback.message.answer("В базе данных пока нет стихотворений.")
+                await callback.message.answer("В базе данных пока нет стихотворений.")
 
 
 # Хендлер для выбранного стихотворения из списка по алфавиту
@@ -237,8 +254,10 @@ async def finished_handler(callback: CallbackQuery, state: FSMContext):
         ]
     )
 
-    # Отправка сообщения с двумя кнопками
-    await callback.message.edit_text(
-        text=share_message,
+    gif_path = "media/dialogs/congrats.gif"
+    gif = FSInputFile(gif_path)
+    await callback.message.answer_animation(
+        gif,
+        caption=share_message,
         reply_markup=share_keyboard
     )

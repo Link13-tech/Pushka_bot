@@ -1,11 +1,14 @@
 import tempfile
-
+import logging
 import requests
+import os
+
+logging.basicConfig(level=logging.INFO)
 
 
 def get_upload_url(access_token):
-    """Запрашивает URL для загрузки аудиофайла."""
-    url = "https://api.vk.com/method/docs.getMessagesUploadServer"
+    """Запрашивает URL для загрузки аудиофайла на сервер ВКонтакте."""
+    url = "https://api.vk.com/method/docs.getUploadServer"
     params = {
         "access_token": access_token,
         "type": "audio_message",
@@ -15,6 +18,7 @@ def get_upload_url(access_token):
     data = response.json()
 
     if "response" in data:
+        logging.info("Получен upload_url для загрузки аудио.")
         return data["response"]["upload_url"]
     else:
         raise Exception(f"Ошибка получения upload_url: {data}")
@@ -80,14 +84,12 @@ def upload_audio_file_from_yandex(upload_url, bucket_name, user_id, poem_id, lev
         else:
             raise Exception(f"Ошибка загрузки файла: {data}")
     finally:
-        # Удаляем временный файл, если он был создан
-        import os
         if local_file_path and os.path.exists(local_file_path):
             os.remove(local_file_path)
 
 
 def save_audio_file(access_token, file_param):
-    """Сохраняет загруженный аудиофайл."""
+    """Сохраняет загруженный аудиофайл на сервере ВКонтакте."""
     url = "https://api.vk.com/method/docs.save"
     params = {
         "access_token": access_token,
@@ -98,6 +100,7 @@ def save_audio_file(access_token, file_param):
     data = response.json()
 
     if "response" in data:
+        logging.info("Аудиофайл успешно сохранён.")
         return data["response"]["audio_message"]
     else:
         raise Exception(f"Ошибка сохранения файла: {data}")

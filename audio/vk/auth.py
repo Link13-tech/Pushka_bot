@@ -1,5 +1,4 @@
 import os
-
 import requests
 from urllib.parse import urlencode
 from dotenv import load_dotenv
@@ -12,7 +11,7 @@ def generate_auth_url():
     params = {
         "client_id": os.getenv("VK_APP_ID"),
         "redirect_uri": os.getenv("REDIRECT_URI"),
-        "scope": "wall,docs, audio",
+        "scope": "wall,docs, audio, offline",
         "response_type": "code",
         "v": os.getenv("VK_API_VERSION"),
     }
@@ -35,7 +34,6 @@ def exchange_code_for_token(code):
         access_token = data["access_token"]
         vk_user_id = data["user_id"]
 
-        # Теперь проверим разрешения токена
         check_permissions(access_token)
 
         return access_token, vk_user_id

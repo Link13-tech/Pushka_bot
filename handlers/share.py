@@ -137,11 +137,11 @@ async def handle_vk_code(message: Message, state: FSMContext):
         # Сохраняем файл как голосовое сообщение в VK
         audio_message = save_audio_file(access_token, file_param)
         owner_id = audio_message["owner_id"]
-        audio_id = audio_message["id"]
-        print(f"Аудиофайл сохранен: owner_id={owner_id}, audio_id={audio_id}")
+        media_id = audio_message["id"]
+        print(f"Аудиофайл сохранен: owner_id={owner_id}, media_id={media_id}")
         print(f"Голосовое сообщение сохранено: {audio_message}")
 
-        attachment = f"audio{owner_id}_{audio_id}"
+        attachment = f"doc{owner_id}_{media_id}"
         print(attachment)
 
         share_message = (
@@ -150,7 +150,7 @@ async def handle_vk_code(message: Message, state: FSMContext):
         )
 
         # Публикуем сообщение на стене пользователя VK
-        publish_post(owner_id, share_message, attachment, access_token)
+        publish_post(share_message, attachment, access_token)
         print("Сообщение опубликовано на стене VK")
 
         # Ответ пользователю

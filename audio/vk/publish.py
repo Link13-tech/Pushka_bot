@@ -1,11 +1,10 @@
 import requests
 
 
-def publish_post(owner_id, message, attachment, access_token):
+def publish_post(message, attachment, access_token):
     """Публикует запись на стене пользователя."""
     url = "https://api.vk.com/method/wall.post"
     params = {
-        "owner_id": owner_id,
         "message": message,
         "attachments": attachment,
         "access_token": access_token,
