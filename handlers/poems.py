@@ -143,7 +143,7 @@ async def random_poem_handler(callback: CallbackQuery, state: FSMContext):
                 inline_keyboard=[
                     [InlineKeyboardButton(text=f'''Учить "{title}"''', callback_data=f"train_{poem_id}_0")],
                     [InlineKeyboardButton(text="Уже выучил, хочу поделиться с друзьями", callback_data="share")],
-                    [InlineKeyboardButton(text="Выбрать другое стихотворение", callback_data="select_poem")]
+                    [InlineKeyboardButton(text="Выбрать другое стихотворение", callback_data="start_study")]
                 ]
             )
 
@@ -254,7 +254,7 @@ async def finished_handler(callback: CallbackQuery, state: FSMContext):
     share_keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="Поделиться", callback_data="share_poem")],
-            [InlineKeyboardButton(text="Выбрать другое стихотворение", callback_data="select_poem")]
+            [InlineKeyboardButton(text="Выбрать другое стихотворение", callback_data="start_study")]
         ]
     )
 
