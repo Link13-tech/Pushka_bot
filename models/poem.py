@@ -9,3 +9,4 @@ class Poem(Base):
     title = Column(String(255), nullable=False)
     content = Column(Text, nullable=False)
     author = Column(String(255), default='А.С. Пушкин')
+    image = Column(String(500), nullable=True)

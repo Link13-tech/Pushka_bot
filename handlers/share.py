@@ -19,7 +19,7 @@ async def finished_or_share_handler(callback: CallbackQuery, state: FSMContext):
 
         # Сообщение и кнопки для "Поделиться"
         share_message = (
-            f'Я только что выучил стих:  {title}.\n'
+            f'Я только что выучил(а) стих:  {title}.\n'
             f"Присоединяйтесь к нашему боту, чтобы изучать \nстихи А.С. Пушкина: https://t.me/PushkaRGB_bot"
         )
         vk_share_link = f"https://vk.com/share.php?url=https://t.me/PushkaRGB_bot&title={share_message}"
@@ -58,7 +58,7 @@ async def finished_or_share_handler(callback: CallbackQuery, state: FSMContext):
 
                 # Сообщение и кнопки для "Поделиться"
                 share_message = (
-                    f'Я выучил стих:  {title}.\n'
+                    f'Я выучил(а) стих:  {title}.\n'
                     f"Присоединяйтесь к нашему боту, чтобы изучать \nстихи А.С. Пушкина: https://t.me/PushkaRGB_bot"
                 )
                 vk_share_link = f"https://vk.com/share.php?url=https://t.me/PushkaRGB_bot&title={share_message}"
@@ -77,7 +77,7 @@ async def finished_or_share_handler(callback: CallbackQuery, state: FSMContext):
                 await callback.message.answer(
                     text="Этот стих еще не выучен. Завершите его изучение, чтобы поделиться!",
                     reply_markup=InlineKeyboardMarkup(
-                        inline_keyboard=[[InlineKeyboardButton(text="Выбрать стихотворение", callback_data="select_poem")]]
+                        inline_keyboard=[[InlineKeyboardButton(text="Выбрать стихотворение", callback_data="start_study")]]
                     )
                 )
 
@@ -89,7 +89,7 @@ async def share_handler(callback: CallbackQuery):
     # Кнопка для выбора следующего стихотворения
     share_keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="Выбрать другое стихотворение", callback_data="select_poem")]
+            [InlineKeyboardButton(text="Выбрать другое стихотворение", callback_data="start_study")]
         ]
     )
 

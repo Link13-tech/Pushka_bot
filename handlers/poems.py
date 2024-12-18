@@ -1,6 +1,6 @@
 from aiogram import Router
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, FSInputFile, InputMediaPhoto
 
 from database import user_db
 from database.database import get_async_session
@@ -98,22 +98,30 @@ async def poem_selected_handler(callback: CallbackQuery, state: FSMContext):
     poem_id = extract_poem_id(callback.data)
 
     async with get_async_session() as session:
-        query = text("SELECT title FROM poems WHERE id = :id")
+        query = text("SELECT title, image FROM poems WHERE id = :id")
         poem = await session.execute(query, {"id": poem_id})
         result = poem.fetchone()
 
         if result:
-            title = result[0]
+            title, image = result
             keyboard = InlineKeyboardMarkup(
-                inline_keyboard=[[
-                    InlineKeyboardButton(text=f'''Учить "{title}"''', callback_data=f"train_{poem_id}_0")
-                ]]
+                inline_keyboard=[[InlineKeyboardButton(text=f'''Учить "{title}"''', callback_data=f"train_{poem_id}_0")]]
             )
             # Сохраняем poem_id в состояние FSM
             await state.update_data(poem_id=poem_id, title=title)
 
-            # Отправляем сообщение с кнопкой для начала изучения
-            await callback.message.answer(f'''Отличный выбор! Теперь давай начнем изучение стихотворения <b>"{title}"</b>.''', reply_markup=keyboard)
+            if image:
+                image = FSInputFile(image)
+                await callback.message.answer_photo(
+                    photo=image,
+                    caption=f'''Отличный выбор! Теперь давай начнем изучение стихотворения <b>"{title}"</b>.''',
+                    reply_markup=keyboard
+                )
+            else:
+                await callback.message.answer(
+                    f'''Отличный выбор! Теперь давай начнем изучение стихотворения <b>"{title}"</b>.''',
+                    reply_markup=keyboard
+                )
         else:
             await callback.message.answer("Такое стихотворение не найдено.")
 
@@ -123,25 +131,34 @@ async def poem_selected_handler(callback: CallbackQuery, state: FSMContext):
 async def random_poem_handler(callback: CallbackQuery, state: FSMContext):
     await callback.message.delete()
     async with get_async_session() as session:
-        query = text("SELECT title, id FROM poems ORDER BY RANDOM() LIMIT 1")
+        query = text("SELECT title, id, image FROM poems ORDER BY RANDOM() LIMIT 1")
         poem = await session.execute(query)
         result = poem.fetchone()
 
         if result:
-            title, poem_id = result
+            title, poem_id, image = result
             await state.update_data(poem_id=poem_id, title=title)
 
             keyboard = InlineKeyboardMarkup(
                 inline_keyboard=[
                     [InlineKeyboardButton(text=f'''Учить "{title}"''', callback_data=f"train_{poem_id}_0")],
                     [InlineKeyboardButton(text="Уже выучил, хочу поделиться с друзьями", callback_data="share")],
-                    [InlineKeyboardButton(text="Выбрать другое стихотворение", callback_data="select_poem")]
+                    [InlineKeyboardButton(text="Выбрать другое стихотворение", callback_data="start_study")]
                 ]
             )
-            # Отправляем сообщение о выбранном стихотворении
-            await callback.message.answer(f'''Я подобрал для тебя стихотворение <b>"{title}"</b>.\nНачнем изучение!''', reply_markup=keyboard)
-        else:
-            await callback.message.answer("В базе данных пока нет стихотворений.")
+
+            if image:
+                image = FSInputFile(image)
+                await callback.message.answer_photo(
+                    photo=image,
+                    caption=f'''Я подобрал для тебя стихотворение <b>"{title}"</b>.\nНачнем изучение!''',
+                    reply_markup=keyboard
+                )
+            else:
+                await callback.message.answer(
+                    f'''Я подобрал для тебя стихотворение <b>"{title}"</b>.\nНачнем изучение!''',
+                    reply_markup=keyboard
+                )
 
 
 # Общий обработчик для уровней тренировки
@@ -184,7 +201,7 @@ async def handle_training_level(callback: CallbackQuery, level: int, state: FSMC
                 buttons.append([InlineKeyboardButton(text="Перейти на следующий уровень", callback_data=f"train_{poem_id}_{next_level}")])
             else:
                 buttons.append([InlineKeyboardButton(text="Записать голос", callback_data=f"record_{poem_id}_{level}")])
-                buttons.append([InlineKeyboardButton(text="Я выучил!", callback_data=f"finished_{poem_id}")])
+                buttons.append([InlineKeyboardButton(text="Я выучил(а)!", callback_data=f"finished_{poem_id}")])
 
             keyboard = InlineKeyboardMarkup(inline_keyboard=buttons)
             poem_message = await callback.message.answer(f"📜 <b>{title}</b>\n{modified_content}", reply_markup=keyboard)
@@ -237,12 +254,17 @@ async def finished_handler(callback: CallbackQuery, state: FSMContext):
     share_keyboard = InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="Поделиться", callback_data="share_poem")],
-            [InlineKeyboardButton(text="Выбрать другое стихотворение", callback_data="select_poem")]
+            [InlineKeyboardButton(text="Выбрать другое стихотворение", callback_data="start_study")]
         ]
     )
 
-    # Отправка сообщения с двумя кнопками
-    await callback.message.edit_text(
-        text=share_message,
+    image_path = "media/dialogs/Ты выучил стих.png"
+    image = FSInputFile(image_path)
+
+    await callback.message.edit_media(
+        media=InputMediaPhoto(
+            media=image,
+            caption=share_message
+        ),
         reply_markup=share_keyboard
     )
