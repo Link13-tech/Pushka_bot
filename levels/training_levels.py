@@ -14,45 +14,45 @@ def apply_difficulty_level(text: str, difficulty_level: int) -> str:
 
     def apply_replacement(word: str, level: int) -> str:
         # Используем регулярное выражение для разделения слова на буквы и знаки
-        match = re.match(r"([а-яА-ЯёЁa-zA-Z\-]+)(\W*)", word)
+        match = re.match(r"([«»\"`]*)([а-яА-ЯёЁa-zA-Z\-]+)(\W*)", word)
         if not match:
             return word
 
-        core, punctuation = match.groups()
+        quotes, core, punctuation = match.groups()
         word_len = len(core)
 
         if level == 0:  # Базовый уровень (текст без изменений)
-            return core + punctuation
+            return quotes + core + punctuation
 
         if level == 1:  # Пропускаем вторую букву для слов из 3 и более букв
             if word_len == 1 or word_len == 2:
-                return core + punctuation
+                return quotes + core + punctuation
             elif word_len >= 3:
-                return core[0] + '-' + core[2:] + punctuation
+                return quotes + core[0] + '-' + core[2:] + punctuation
 
         elif level == 2:  # Пропускаем 2 и 3 буквы для слов из 4 и более букв
             if word_len == 1 or word_len == 2:
-                return core + punctuation
+                return quotes + core + punctuation
             elif word_len == 3:
-                return core[0] + '-' + core[2] + punctuation
+                return quotes + core[0] + '-' + core[2] + punctuation
             elif word_len >= 4:
-                return core[0] + '-' + '-' + core[3:] + punctuation
+                return quotes + core[0] + '-' + '-' + core[3:] + punctuation
 
         elif level == 3:  # Пропускаем все буквы, кроме первой и последней для слов из 4 и более букв
             if word_len == 1 or word_len == 2:
-                return core + punctuation
+                return quotes + core + punctuation
             elif word_len == 3:
-                return core[0] + '-' + core[2] + punctuation
+                return quotes + core[0] + '-' + core[2] + punctuation
             elif word_len >= 4:
-                return core[0] + '-' * (word_len - 2) + core[-1] + punctuation
+                return quotes + core[0] + '-' * (word_len - 2) + core[-1] + punctuation
 
         elif level == 4:  # Пропущена все буквы кроме первой буквы
             if word_len == 1:
-                return core + punctuation
+                return quotes + core + punctuation
             else:
-                return core[0] + '-' * (word_len - 1) + punctuation
+                return quotes + core[0] + '-' * (word_len - 1) + punctuation
 
-        return core + punctuation
+        return quotes + core + punctuation
 
     # Обрабатываем каждое слово, сохраняя формат строк
     return '\n'.join([' '.join([apply_replacement(word, difficulty_level) for word in line.split()]) for line in text.split('\n')])
