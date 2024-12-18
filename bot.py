@@ -16,6 +16,7 @@ from handlers.admin import router as admin_router
 from handlers.poems import router as poems_router
 from handlers.share import router as share_router
 from handlers.voice import router as voice_router
+from handlers.cancel import router as cancel_router
 import os
 
 # Загружаем переменные окружения
@@ -33,6 +34,7 @@ bot = Bot(
     default=DefaultBotProperties(parse_mode=ParseMode.HTML)
 )
 dp = Dispatcher(storage=MemoryStorage())
+dp.include_router(cancel_router)
 dp.include_router(admin_router)
 dp.include_router(start_router)
 dp.include_router(poems_router)

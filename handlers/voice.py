@@ -2,7 +2,7 @@ import math
 import os
 
 from aiogram import Router, types
-from aiogram.types import CallbackQuery, ContentType, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import CallbackQuery, ContentType, InlineKeyboardButton, InlineKeyboardMarkup, FSInputFile
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from database.database import get_async_session
@@ -63,6 +63,10 @@ async def process_voice_message(message: types.Message, state: FSMContext):
     level = state_data["current_level"]
     poem_message_id = state_data.get("poem_message_id")
 
+    gif_path = "media/dialogs/loading.mp4"
+    gif = FSInputFile(gif_path)
+    loading_message = await message.answer_animation(gif, caption="Обрабатываем ваше голосовое сообщение...")
+
     # Скачиваем голосовое сообщение
     voice_file = await message.bot.get_file(message.voice.file_id)
     ogg_path = f"audio/files/{user_id}_voice.ogg"
@@ -116,6 +120,7 @@ async def process_voice_message(message: types.Message, state: FSMContext):
 
         message_ids = await send_long_message_with_button(message.bot, message.chat.id, text_to_send, keyboard)
         await state.update_data(message_ids=message_ids)
+        await message.bot.delete_message(message.chat.id, loading_message.message_id)
 
     except Exception as e:
         await message.answer(f"Произошла ошибка при обработке аудио: {e}")

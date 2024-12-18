@@ -23,6 +23,7 @@ async def set_admin_commands(bot: Bot, admin_chat_id: int):
         BotCommand(command="contact", description="Контакты для связи"),
         BotCommand(command="setrole", description="Изменить роль пользователя"),
         BotCommand(command="stats", description="Статистика"),
+        BotCommand(command="cancel", description="Сброс команды/данных")
     ]
     await bot.set_my_commands(commands, scope=BotCommandScopeChat(chat_id=admin_chat_id))
 
