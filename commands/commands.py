@@ -12,6 +12,7 @@ async def set_default_commands(bot: Bot):
         BotCommand(command="description", description="Описание бота"),
         BotCommand(command="start_study", description="Погружаемся в литературу"),
         BotCommand(command="contact", description="Контакты для связи"),
+        BotCommand(command="feedback", description="Обратная связь"),
     ]
     await bot.set_my_commands(commands, scope=BotCommandScopeDefault())
 
@@ -23,6 +24,7 @@ async def set_admin_commands(bot: Bot, admin_chat_id: int):
         BotCommand(command="description", description="Описание бота"),
         BotCommand(command="start_study", description="Погружаемся в литературу"),
         BotCommand(command="contact", description="Контакты для связи"),
+        BotCommand(command="feedback", description="Обратная связь"),
         BotCommand(command="setrole", description="Изменить роль пользователя"),
         BotCommand(command="stats", description="Статистика"),
         BotCommand(command="cancel", description="Сброс команды/данных")

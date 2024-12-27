@@ -1,4 +1,5 @@
 from aiogram import Router
+from aiogram.exceptions import TelegramNetworkError
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, FSInputFile, InputMediaPhoto
 
@@ -111,19 +112,26 @@ async def poem_selected_handler(callback: CallbackQuery, state: FSMContext):
             await state.update_data(poem_id=poem_id, title=title)
 
             if image:
-                image = FSInputFile(image)
-                await callback.message.answer_photo(
-                    photo=image,
-                    caption=f'''Отличный выбор! Теперь давай начнем изучение стихотворения <b>"{title}"</b>.''',
-                    reply_markup=keyboard
-                )
-            else:
-                await callback.message.answer(
-                    f'''Отличный выбор! Теперь давай начнем изучение стихотворения <b>"{title}"</b>.''',
-                    reply_markup=keyboard
-                )
-        else:
-            await callback.message.answer("Такое стихотворение не найдено.")
+                file_extension = image.split('.')[-1].lower()
+                file = FSInputFile(image)
+
+                try:
+                    if file_extension in ['png']:
+                        await callback.message.answer_photo(
+                            photo=file,
+                            caption=f'''Отличный выбор! Теперь давай начнем изучение стихотворения <b>"{title}"</b>.''',
+                            reply_markup=keyboard
+                        )
+                    elif file_extension in ['gif']:
+                        await callback.message.answer_animation(
+                            animation=file,
+                            caption=f'''Я подобрал для тебя стихотворение <b>"{title}"</b>.\nНачнем изучение!''',
+                            reply_markup=keyboard
+                        )
+                    else:
+                        await callback.message.answer("Файл неподдерживаемого формата.")
+                except TelegramNetworkError as e:
+                    await callback.message.answer(f"Ошибка при отправке файла: {e}")
 
 
 # Хендлер для случайного стихотворения
@@ -148,12 +156,26 @@ async def random_poem_handler(callback: CallbackQuery, state: FSMContext):
             )
 
             if image:
-                image = FSInputFile(image)
-                await callback.message.answer_photo(
-                    photo=image,
-                    caption=f'''Я подобрал для тебя стихотворение <b>"{title}"</b>.\nНачнем изучение!''',
-                    reply_markup=keyboard
-                )
+                file_extension = image.split('.')[-1].lower()
+                file = FSInputFile(image)
+
+                try:
+                    if file_extension in ['png']:
+                        await callback.message.answer_photo(
+                            photo=file,
+                            caption=f'''Я подобрал для тебя стихотворение <b>"{title}"</b>.\nНачнем изучение!''',
+                            reply_markup=keyboard
+                        )
+                    elif file_extension in ['gif']:
+                        await callback.message.answer_animation(
+                            animation=file,
+                            caption=f'''Я подобрал для тебя стихотворение <b>"{title}"</b>.\nНачнем изучение!''',
+                            reply_markup=keyboard
+                        )
+                    else:
+                        await callback.message.answer("Файл неподдерживаемого формата.")
+                except TelegramNetworkError as e:
+                    await callback.message.answer(f"Ошибка при отправке файла: {e}")
             else:
                 await callback.message.answer(
                     f'''Я подобрал для тебя стихотворение <b>"{title}"</b>.\nНачнем изучение!''',
