@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, ForeignKey, Enum, BigInteger
 from sqlalchemy.orm import relationship
 from enum import Enum as PyEnum
 from .base import Base
@@ -14,7 +14,7 @@ class User(Base):
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True)
-    telegram_id = Column(Integer, unique=True, nullable=False)
+    telegram_id = Column(BigInteger, unique=True, nullable=False)
     username = Column(String, nullable=True)
     current_poem_id = Column(Integer, ForeignKey('poems.id'), nullable=True)
     current_level = Column(Integer, default=0)
