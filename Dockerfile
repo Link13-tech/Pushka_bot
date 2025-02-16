@@ -7,9 +7,9 @@ WORKDIR /app
 # Создаем необходимые директории для хранения аудиофайлов
 RUN mkdir -p /app/audio/files
 
-# Устанавливаем ffmpeg
+# Устанавливаем ffmpeg и необходимые пакеты для сборки
 RUN apt-get update && \
-    apt-get install -y ffmpeg && \
+    apt-get install -y ffmpeg llvm llvm-dev build-essential && \
     rm -rf /var/lib/apt/lists/*
 
 # Копируем файлы проекта
