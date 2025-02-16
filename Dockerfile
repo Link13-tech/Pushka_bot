@@ -9,8 +9,11 @@ RUN mkdir -p /app/audio/files
 
 # Устанавливаем ffmpeg и необходимые пакеты для сборки
 RUN apt-get update && \
-    apt-get install -y ffmpeg llvm llvm-dev build-essential && \
+    apt-get install -y ffmpeg build-essential llvm-10 llvm-10-dev llvm-10-tools && \
     rm -rf /var/lib/apt/lists/*
+
+# Устанавливаем переменную окружения для указания пути к llvm-config
+ENV LLVM_CONFIG=/usr/bin/llvm-config-10
 
 # Копируем файлы проекта
 COPY . .
