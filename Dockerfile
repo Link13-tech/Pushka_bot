@@ -7,9 +7,11 @@ WORKDIR /app
 # Создаем необходимые директории для хранения аудиофайлов
 RUN mkdir -p /app/audio/files
 
-# Устанавливаем ffmpeg и необходимые пакеты для сборки
+# Устанавливаем ffmpeg, репозиторий LLVM и необходимые пакеты для сборки
 RUN apt-get update && \
-    apt-get install -y ffmpeg build-essential llvm-10 llvm-10-dev llvm-10-tools && \
+    apt-get install -y gnupg2 curl build-essential ffmpeg && \
+    curl -sSL https://apt.llvm.org/llvm.sh | bash -s -- 10 && \
+    apt-get install -y llvm-10 llvm-10-dev llvm-10-tools && \
     rm -rf /var/lib/apt/lists/*
 
 # Устанавливаем переменную окружения для указания пути к llvm-config
