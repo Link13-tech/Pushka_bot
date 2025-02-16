@@ -9,14 +9,14 @@ RUN mkdir -p /app/audio/files
 
 # Устанавливаем ffmpeg
 RUN apt-get update && \
-    apt-get install -y ffmpeg && \
+    apt-get install -y ffmpeg curl && \
     rm -rf /var/lib/apt/lists/*
 
 # Устанавливаем Poetry через официальный скрипт
 RUN curl -sSL https://install.python-poetry.org | python3 -
 
-# Добавляем Poetry в PATH
-ENV PATH="${PATH}:/root/.local/bin"
+# Проверяем, что Poetry установлен и добавлен в PATH
+RUN poetry --version
 
 # Копируем файлы проекта
 COPY . .
