@@ -7,9 +7,9 @@ WORKDIR /app
 # Создаем необходимые директории для хранения аудиофайлов
 RUN mkdir -p /app/audio/files
 
-# Устанавливаем ffmpeg и необходимые зависимости для сборки llvmlite (используем llvm-14)
+# Устанавливаем ffmpeg и необходимые зависимости для сборки llvmlite
 RUN apt-get update && \
-    apt-get install -y ffmpeg llvm-14-dev llvm-config build-essential && \
+    apt-get install -y ffmpeg llvm-dev build-essential && \
     rm -rf /var/lib/apt/lists/*
 
 # Копируем файлы проекта в контейнер
