@@ -9,7 +9,7 @@ RUN mkdir -p /app/audio/files
 
 # Устанавливаем ffmpeg и необходимые зависимости для сборки llvmlite (используем llvm-14)
 RUN apt-get update && \
-    apt-get install -y ffmpeg llvm-14-dev build-essential && \
+    apt-get install -y ffmpeg llvm-14-dev llvm-config build-essential && \
     rm -rf /var/lib/apt/lists/*
 
 # Копируем файлы проекта в контейнер
