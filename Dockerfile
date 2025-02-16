@@ -1,5 +1,5 @@
 # Используем базовый образ Python
-FROM python:3.12
+FROM python:3.12.2
 
 # Устанавливаем рабочую директорию в контейнере
 WORKDIR /app
@@ -12,10 +12,8 @@ RUN apt-get update && \
     apt-get install -y \
     ffmpeg \
     llvm \
-    llvm-dev \
-    llvm-tools \
-    build-essential \
     clang \
+    build-essential \
     libclang-dev \
     curl && \
     rm -rf /var/lib/apt/lists/*
@@ -25,8 +23,6 @@ COPY . .
 
 # Устанавливаем Poetry
 RUN pip install poetry
-
-RUN poetry --version
 
 # Отключаем создание виртуальных окружений и устанавливаем зависимости через Poetry
 RUN poetry config virtualenvs.create false && \
