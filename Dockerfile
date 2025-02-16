@@ -1,13 +1,10 @@
 # Используем базовый образ Python
 FROM python:3.12.2
 
-# Устанавливаем рабочую директорию в контейнере
+# Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Создаем необходимые директории для хранения аудиофайлов
-RUN mkdir -p /app/audio/files
-
-# Обновляем пакеты и устанавливаем необходимые зависимости для сборки
+# Обновляем пакеты и устанавливаем зависимости для сборки
 RUN apt-get update && \
     apt-get install -y \
     ffmpeg \
@@ -15,23 +12,24 @@ RUN apt-get update && \
     clang \
     build-essential \
     libclang-dev \
+    libedit-dev \
     curl && \
     rm -rf /var/lib/apt/lists/*
-
-# Копируем файлы проекта
-COPY . .
 
 # Устанавливаем Poetry
 RUN pip install poetry
 
-# Включаем использование виртуального окружения
-RUN poetry config virtualenvs.create true
+# Копируем файлы poetry.lock и pyproject.toml для кэширования зависимостей
+COPY poetry.lock pyproject.toml ./
 
-# Устанавливаем зависимости проекта
-RUN poetry install --only main --no-root -v
+# Устанавливаем зависимости
+RUN poetry install --no-root --only main -v
 
-# Выводим список установленных библиотек с версиями
-RUN poetry show --tree
+# Копируем оставшиеся файлы проекта
+COPY . .
+
+# Создаем директории для хранения аудиофайлов
+RUN mkdir -p /app/audio/files
 
 # Указываем точку входа
 CMD ["poetry", "run", "python", "bot.py"]
