@@ -12,14 +12,17 @@ RUN apt-get update && \
     apt-get install -y ffmpeg && \
     rm -rf /var/lib/apt/lists/*
 
+# Устанавливаем Poetry через официальный скрипт
+RUN curl -sSL https://install.python-poetry.org | python3 -
+
+# Добавляем Poetry в PATH
+ENV PATH="${PATH}:/root/.local/bin"
+
 # Копируем файлы проекта
 COPY . .
 
-# Устанавливаем Poetry
-RUN pip install poetry
-
 # Устанавливаем зависимости через Poetry
-RUN poetry config virtualenvs.create false && poetry install --only main --no-root
+RUN poetry install --only main --no-root --no-interaction
 
 # Указываем точку входа
 CMD ["poetry", "run", "python", "bot.py"]
