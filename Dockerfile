@@ -18,10 +18,14 @@ COPY . .
 # Устанавливаем Poetry
 RUN pip install poetry
 
+# Проверяем версию Poetry
 RUN poetry --version
 
-# Устанавливаем зависимости через Poetry
-RUN poetry config virtualenvs.create false && poetry install --only main --no-root
+# Сначала настраиваем Poetry, чтобы не создавать виртуальные окружения
+RUN poetry config virtualenvs.create false
+
+# Затем устанавливаем зависимости
+RUN poetry install --only main --no-root -v
 
 # Указываем точку входа
-CMD ["poetry", "run", "python", "bot.py"]
+CMD ["poetry", "run", "python", "bot.py"
