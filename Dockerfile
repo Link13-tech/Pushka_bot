@@ -19,7 +19,7 @@ COPY . .
 RUN pip install poetry
 
 # Устанавливаем зависимости через Poetry
-RUN poetry config virtualenvs.create false && poetry install --no-dev
+RUN poetry config virtualenvs.create false && poetry install --only main --no-root
 
 # Указываем точку входа
 CMD ["poetry", "run", "python", "bot.py"]
