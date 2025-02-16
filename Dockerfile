@@ -7,9 +7,17 @@ WORKDIR /app
 # Создаем необходимые директории для хранения аудиофайлов
 RUN mkdir -p /app/audio/files
 
-# Устанавливаем ffmpeg
+# Обновляем пакеты и устанавливаем необходимые зависимости для сборки
 RUN apt-get update && \
-    apt-get install -y ffmpeg && \
+    apt-get install -y \
+    ffmpeg \
+    llvm \
+    llvm-dev \
+    llvm-tools \
+    build-essential \
+    clang \
+    libclang-dev \
+    curl && \
     rm -rf /var/lib/apt/lists/*
 
 # Копируем файлы проекта
@@ -18,14 +26,11 @@ COPY . .
 # Устанавливаем Poetry
 RUN pip install poetry
 
-# Проверяем версию Poetry
 RUN poetry --version
 
-# Сначала настраиваем Poetry, чтобы не создавать виртуальные окружения
-RUN poetry config virtualenvs.create false
-
-# Затем устанавливаем зависимости
-RUN poetry install --only main --no-root -v
+# Отключаем создание виртуальных окружений и устанавливаем зависимости через Poetry
+RUN poetry config virtualenvs.create false && \
+    poetry install --only main --no-root -v
 
 # Указываем точку входа
-CMD ["poetry", "run", "python", "bot.py"
+CMD ["poetry", "run", "python", "bot.py"]
