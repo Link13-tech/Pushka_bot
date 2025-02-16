@@ -7,22 +7,19 @@ WORKDIR /app
 # Создаем необходимые директории для хранения аудиофайлов
 RUN mkdir -p /app/audio/files
 
-# Устанавливаем ffmpeg и необходимые зависимости для сборки llvmlite
+# Устанавливаем ffmpeg
 RUN apt-get update && \
-    apt-get install -y ffmpeg llvm-dev build-essential && \
+    apt-get install -y ffmpeg && \
     rm -rf /var/lib/apt/lists/*
 
-# Копируем файлы проекта в контейнер
+# Копируем файлы проекта
 COPY . .
 
 # Устанавливаем Poetry
 RUN pip install poetry
 
-# Проверяем, что Poetry установлен
-RUN poetry --version
-
 # Устанавливаем зависимости через Poetry
-RUN poetry install --no-interaction --no-root
+RUN poetry config virtualenvs.create false && poetry install --only main --no-root
 
 # Указываем точку входа
 CMD ["poetry", "run", "python", "bot.py"]
