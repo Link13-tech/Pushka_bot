@@ -18,6 +18,8 @@ COPY . .
 # Устанавливаем Poetry
 RUN pip install poetry
 
+RUN poetry --version
+
 # Устанавливаем зависимости через Poetry
 RUN poetry config virtualenvs.create false && poetry install --only main --no-root
 
